@@ -1,4 +1,9 @@
-import { type Content, GoogleGenAI, Type } from "@google/genai";
+import {
+  type Content,
+  type GenerateContentConfig,
+  GoogleGenAI,
+  Type,
+} from "@google/genai";
 import type {
   CallLlmResponse,
   StreamingCallback,
@@ -18,7 +23,7 @@ export async function geminiCallLlm(
     "gemini-2.0-flash-lite", // awesome price, bad performance
   ];
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const config = {
+  const config: GenerateContentConfig = {
     thinkingConfig: {
       thinkingBudget: 0,
     },
@@ -54,6 +59,12 @@ export async function geminiCallLlm(
           description: "Whether this is the final response or needs more steps",
         },
       },
+      propertyOrdering: [
+        "thought",
+        "response_to_user",
+        "action",
+        "is_final_answer",
+      ],
     },
   };
   const contents: Content[] = [

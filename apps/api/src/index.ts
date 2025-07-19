@@ -1,3 +1,4 @@
+import cors from "cors";
 import { config } from "dotenv";
 import express from "express";
 import { orchestratorAgent } from "./agents/orchestrator-agent";
@@ -8,6 +9,17 @@ const PORT = process.env.PORT || 3000;
 const USD_TO_BRL_RATE = 5.58;
 
 const app = express();
+
+// Configure CORS with most permissive settings for development
+app.use(
+  cors({
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
+    allowedHeaders: ["*"], // Allow all headers
+    credentials: false, // Set to false when using origin: "*"
+  })
+);
+
 app.use(express.json());
 
 app.post("/chat", async (req, res) => {
