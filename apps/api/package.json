@@ -14,11 +14,14 @@
     "@google/genai": "^1.10.0",
     "@repo/ai-agents": "workspace:*",
     "@repo/llm-prices": "workspace:*",
+    "axios": "^1.10.0",
     "dotenv": "^17.2.0",
+    "express": "^5.1.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
+    "@types/express": "^5.0.3",
     "@types/node": "^22.15.3",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",

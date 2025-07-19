@@ -1,32 +1,47 @@
 import { config } from "dotenv";
-import { orchestrator } from "./agents";
+import express from "express";
+import { orchestratorAgent } from "./agents/orchestrator-agent";
 
 config();
 
+const PORT = process.env.PORT || 3000;
 const USD_TO_BRL_RATE = 5.58;
 
-async function main() {
+const app = express();
+app.use(express.json());
+
+app.post("/chat", async (req, res) => {
+  const { message } = req.body;
   let totalCost = 0;
 
-  await orchestrator.run({
+  // Set up simple streaming response
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  res.setHeader("Transfer-Encoding", "chunked");
+
+  await orchestratorAgent.run({
     message: {
       role: "user",
       // content: "What is the capital of France and what is the weather there?",
-      content: "What is 1 + 1?",
+      // content: "What is 1 + 1?",
+      content: message,
     },
     onMessage: (message) => {
-      console.log("MESSAGE", JSON.stringify(message, null, 2));
+      console.log("Message:", JSON.stringify(message, null, 2));
       totalCost += message.metadata?.usage?.cost ?? 0;
     },
-    // onStreamingChunk: (chunk) => {
-    //   console.log("STREAMING CHUNK:", chunk);
-    // },
+    onStreamingChunk: (chunk) => {
+      res.write(chunk);
+    },
   });
 
   console.log(
     "Total cost in BRL cents:",
     Number((totalCost * USD_TO_BRL_RATE * 100).toFixed(2))
   );
-}
 
-main();
+  res.end();
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { type Content, GoogleGenAI, Type } from "@google/genai";
 import type {
   CallLlmResponse,
   StreamingCallback,
@@ -56,10 +56,20 @@ export async function geminiCallLlm(
       },
     },
   };
-  const contents = [
+  const contents: Content[] = [
     {
       role: "user",
       parts: [
+        // {
+        //   inlineData: {
+        //     data: "JVBERi0xLjYKJeLjz9MKMSAwIG9...",
+        //     mimeType: "application/pdf",
+        //     // mimeType: "image/png", // .png
+        //     // mimeType: "audio/x-m4a", // .m4a
+        //     // mimeType: "audio/mpeg", // .mp3
+        //     // mimeType: "video/mp4", // .mp4
+        //   },
+        // },
         {
           text: input,
         },
