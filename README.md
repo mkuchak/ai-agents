@@ -16,9 +16,8 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
+- `landing`: a [Next.js](https://nextjs.org/) app
+- `@repo/ui`: a stub React component library shared by `landing` application
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
 This monorepo uses [Biome](https://biomejs.dev/) for linting and formatting across all packages.
@@ -79,12 +78,12 @@ You can develop a specific package by using a [filter](https://turborepo.com/doc
 
 ```
 # With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+turbo dev --filter=landing
 
 # Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+npx turbo dev --filter=landing
+yarn exec turbo dev --filter=landing
+pnpm exec turbo dev --filter=landing
 ```
 
 ### Remote Caching
