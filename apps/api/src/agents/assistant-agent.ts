@@ -1,10 +1,10 @@
 import { Agent } from "@repo/ai-agents";
 import { z } from "zod";
-import { callLlm } from "./call-llm";
+import { geminiCallLlm } from "../adapters/gemini-call-llm";
 
 export const assistantAgent = new Agent(
   "You are a helpful assistant that can answer questions and help with tasks.",
-  callLlm
+  geminiCallLlm
 );
 
 assistantAgent.registerTool({
