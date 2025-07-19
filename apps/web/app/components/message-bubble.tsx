@@ -12,9 +12,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
       {isAssistant && (
         <div className="flex-shrink-0">
-          <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600">
             <svg
-              className="w-4 h-4 text-white"
+              className="h-4 w-4 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -33,32 +33,32 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
       <div className={`max-w-3xl ${isUser ? "ml-12" : "mr-12"}`}>
         <div
-          className={`px-4 py-3 rounded-2xl ${
+          className={`rounded-2xl px-4 py-3 ${
             isUser
               ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+              : "border border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           }`}
         >
-          <div className="prose prose-sm max-w-none dark:prose-invert">
+          <div className="prose prose-sm dark:prose-invert max-w-none">
             {message.content ? (
               <div className="whitespace-pre-wrap break-words">
                 {message.content}
                 {message.isStreaming && (
-                  <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />
+                  <span className="ml-1 inline-block h-4 w-2 animate-pulse bg-current" />
                 )}
               </div>
             ) : message.isStreaming ? (
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-current rounded-full animate-pulse" />
-                <div className="w-2 h-2 bg-current rounded-full animate-pulse delay-75" />
-                <div className="w-2 h-2 bg-current rounded-full animate-pulse delay-150" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-current" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-current delay-75" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-current delay-150" />
               </div>
             ) : null}
           </div>
         </div>
 
         <div
-          className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${
+          className={`mt-1 text-gray-500 text-xs dark:text-gray-400 ${
             isUser ? "text-right" : "text-left"
           }`}
         >
@@ -71,9 +71,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
       {isUser && (
         <div className="flex-shrink-0">
-          <div className="flex items-center justify-center w-8 h-8 bg-gray-600 rounded-full">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-600">
             <svg
-              className="w-4 h-4 text-white"
+              className="h-4 w-4 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

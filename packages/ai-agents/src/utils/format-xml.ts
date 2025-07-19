@@ -7,7 +7,7 @@ export interface FormatXmlOptions {
   /** Number of spaces for indentation (default: 2) */
   indentSize?: number;
   /** Type of indentation - 'spaces' or 'tabs' (default: 'spaces') */
-  indentType?: 'spaces' | 'tabs';
+  indentType?: "spaces" | "tabs";
   /** Whether to preserve whitespace in content (default: true) */
   preserveWhitespace?: boolean;
   /** Whether to normalize line breaks (default: true) */
@@ -31,7 +31,7 @@ interface FormatterState {
 function getDefaultOptions(): Required<FormatXmlOptions> {
   return {
     indentSize: 2,
-    indentType: 'spaces',
+    indentType: "spaces",
     preserveWhitespace: true,
     normalizeLineBreaks: true,
     trimContent: false,
@@ -42,7 +42,7 @@ function getDefaultOptions(): Required<FormatXmlOptions> {
  * Creates the indentation string based on options
  */
 function createIndentString(options: Required<FormatXmlOptions>): string {
-  return options.indentType === 'tabs' ? '\t' : ' '.repeat(options.indentSize);
+  return options.indentType === "tabs" ? "\t" : " ".repeat(options.indentSize);
 }
 
 /**
@@ -77,7 +77,9 @@ function isSelfContainedComment(line: string): boolean {
  * Checks if a line contains an opening tag (but not self-closing)
  */
 function isOpeningTag(line: string): boolean {
-  return line.match(/<[^\/][^>]*>/) !== null && line.match(/<[^\/][^>]*\/>/) === null;
+  return (
+    line.match(/<[^/][^>]*>/) !== null && line.match(/<[^/][^>]*\/>/) === null
+  );
 }
 
 /**
@@ -100,10 +102,10 @@ function isSelfClosingTag(line: string): boolean {
 function extractTagName(line: string): string | null {
   const openingMatch = line.match(/<([^\s>]+)/);
   if (openingMatch) return openingMatch[1];
-  
+
   const closingMatch = line.match(/<\/([^>]+)>/);
   if (closingMatch) return closingMatch[1];
-  
+
   return null;
 }
 
@@ -170,8 +172,7 @@ function handleOpeningTag(state: FormatterState, line: string): void {
   // If tag opens and closes on same line with content
   else if (line.startsWith(`<${tagName}>`) && line.endsWith(`</${tagName}>`)) {
     addIndentedLine(state, line);
-  } 
-  else {
+  } else {
     addIndentedLine(state, line);
     state.openTags.push(tagName);
     state.indentLevel++;
@@ -203,8 +204,7 @@ function handleClosingTag(state: FormatterState, line: string): void {
     state.indentLevel = Math.max(0, state.indentLevel - 1);
     addIndentedLine(state, `</${tagName}>`);
     if (state.openTags.length > 0) state.openTags.pop();
-  } 
-  else {
+  } else {
     state.indentLevel = Math.max(0, state.indentLevel - 1);
     addIndentedLine(state, line);
     if (state.openTags.length > 0) state.openTags.pop();
@@ -214,12 +214,15 @@ function handleClosingTag(state: FormatterState, line: string): void {
 /**
  * Processes a single line with whitespace handling based on options
  */
-function processLineWithWhitespace(state: FormatterState, originalLine: string): void {
+function processLineWithWhitespace(
+  state: FormatterState,
+  originalLine: string
+): void {
   // Skip empty lines
   if (!originalLine.trim()) return;
 
   const trimmedLine = originalLine.trim();
-  
+
   // Handle comments first
   if (handleComment(state, trimmedLine)) return;
 
@@ -240,22 +243,24 @@ function processLineWithWhitespace(state: FormatterState, originalLine: string):
 /**
  * Processes a single line based on its type (legacy function for compatibility)
  */
-function processLine(state: FormatterState, line: string): void {
+function _processLine(state: FormatterState, line: string): void {
   processLineWithWhitespace(state, line);
 }
 
 export function formatXml(xml: string, options?: FormatXmlOptions): string {
   const mergedOptions = { ...getDefaultOptions(), ...options };
-  const processedXml = mergedOptions.normalizeLineBreaks ? normalizeXml(xml) : xml;
+  const processedXml = mergedOptions.normalizeLineBreaks
+    ? normalizeXml(xml)
+    : xml;
   const lines = processedXml.split(/\r?\n/);
-  
+
   const state: FormatterState = {
     result: "",
     indentLevel: 0,
     inComment: false,
     openTags: [],
     indentString: createIndentString(mergedOptions),
-    options: mergedOptions
+    options: mergedOptions,
   };
 
   for (const originalLine of lines) {
@@ -264,4 +269,3 @@ export function formatXml(xml: string, options?: FormatXmlOptions): string {
 
   return state.result.trim();
 }
-

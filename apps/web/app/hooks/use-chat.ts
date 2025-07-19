@@ -1,4 +1,3 @@
-import { jsonrepair } from "jsonrepair";
 import { useCallback, useRef, useState } from "react";
 import type { ChatActions, ChatState, Message } from "./types";
 

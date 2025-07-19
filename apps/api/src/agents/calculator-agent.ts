@@ -56,7 +56,7 @@ calculatorAgent.registerTool({
       const result = eval(sanitizedExpression);
 
       // Validate result is a number
-      if (typeof result !== "number" || !isFinite(result)) {
+      if (typeof result !== "number" || !Number.isFinite(result)) {
         throw new Error("Expression did not evaluate to a valid number");
       }
 

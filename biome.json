@@ -22,7 +22,7 @@
         "noArrayIndexKey": "warn"
       },
       "nursery": {
-        "useSortedClasses": "warn"
+        "useSortedClasses": "error"
       }
     }
   },
@@ -62,6 +62,7 @@
       "!**/node_modules/**",
       "!**/dist/**",
       "!**/.next/**",
+      "!**/.react-router/**",
       "!**/build/**",
       "!**/coverage/**",
       "!**/.turbo/**",

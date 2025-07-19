@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { formatXml, type FormatXmlOptions } from "./format-xml";
+import { describe, expect, it } from "vitest";
+import { type FormatXmlOptions, formatXml } from "./format-xml";
 
 describe("formatXml", () => {
   describe("Inline XML formatting (no changes)", () => {
@@ -9,12 +9,14 @@ describe("formatXml", () => {
     });
 
     it("should return deeply nested inline XML unchanged", () => {
-      const input = "<root><level1><level2><level3>deep content</level3></level2></level1></root>";
+      const input =
+        "<root><level1><level2><level3>deep content</level3></level2></level1></root>";
       expect(formatXml(input)).toBe(input);
     });
 
     it("should return multiple sibling tags unchanged", () => {
-      const input = "<root><child1>content1</child1><child2>content2</child2><child3>content3</child3></root>";
+      const input =
+        "<root><child1>content1</child1><child2>content2</child2><child3>content3</child3></root>";
       expect(formatXml(input)).toBe(input);
     });
 
@@ -34,45 +36,44 @@ describe("formatXml", () => {
     });
 
     it("should return inline comments unchanged", () => {
-      const input = "<root><!-- This is a comment --><child>content</child></root>";
+      const input =
+        "<root><!-- This is a comment --><child>content</child></root>";
       expect(formatXml(input)).toBe(input);
     });
 
     it("should return inline tags with attributes unchanged", () => {
-      const input = "<root><div class='container' id='main'>content</div></root>";
+      const input =
+        "<root><div class='container' id='main'>content</div></root>";
       expect(formatXml(input)).toBe(input);
     });
 
     it("should return complex inline attributes unchanged", () => {
-      const input = "<root><img src='image.jpg' alt='Test Image' width='100' height='200' /></root>";
+      const input =
+        "<root><img src='image.jpg' alt='Test Image' width='100' height='200' /></root>";
       expect(formatXml(input)).toBe(input);
     });
 
     it("should return inline tags with special characters unchanged", () => {
-      const input = "<root><tag>Content with &lt; &gt; &amp; special chars</tag></root>";
+      const input =
+        "<root><tag>Content with &lt; &gt; &amp; special chars</tag></root>";
       expect(formatXml(input)).toBe(input);
     });
 
     it("should return inline content with internal whitespace unchanged", () => {
-      const input = "<root><child>multiple    spaces    between    words</child></root>";
+      const input =
+        "<root><child>multiple    spaces    between    words</child></root>";
       expect(formatXml(input)).toBe(input);
     });
   });
 
   describe("Multi-line XML formatting (with proper indentation)", () => {
     it("should format simple nested tags with line breaks", () => {
-      const input = [
-        "<root>",
-        "<child>content</child>",
-        "</root>"
-      ].join("\n");
-      
-      const expected = [
-        "<root>",
-        "  <child>content</child>",
-        "</root>"
-      ].join("\n");
-      
+      const input = ["<root>", "<child>content</child>", "</root>"].join("\n");
+
+      const expected = ["<root>", "  <child>content</child>", "</root>"].join(
+        "\n"
+      );
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -84,9 +85,9 @@ describe("formatXml", () => {
         "<level3>deep content</level3>",
         "</level2>",
         "</level1>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <level1>",
@@ -94,9 +95,9 @@ describe("formatXml", () => {
         "      <level3>deep content</level3>",
         "    </level2>",
         "  </level1>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -106,17 +107,17 @@ describe("formatXml", () => {
         "<child1>content1</child1>",
         "<child2>content2</child2>",
         "<child3>content3</child3>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <child1>content1</child1>",
         "  <child2>content2</child2>",
         "  <child3>content3</child3>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -127,18 +128,18 @@ describe("formatXml", () => {
         "</empty>",
         "<another>",
         "</another>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <empty>",
         "  </empty>",
         "  <another>",
         "  </another>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -147,16 +148,16 @@ describe("formatXml", () => {
         "<root>",
         "<img src='test.jpg' />",
         "<br />",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <img src='test.jpg' />",
         "  <br />",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -166,17 +167,17 @@ describe("formatXml", () => {
         "<div>content</div>",
         "<hr />",
         "<p>paragraph</p>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <div>content</div>",
         "  <hr />",
         "  <p>paragraph</p>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -187,16 +188,16 @@ describe("formatXml", () => {
         "<root>",
         "<!-- This is a comment -->",
         "<child>content</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <!-- This is a comment -->",
         "  <child>content</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -206,17 +207,17 @@ describe("formatXml", () => {
         "<!-- This is a",
         "multi-line comment -->",
         "<child>content</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <!-- This is a",
         "  multi-line comment -->",
         "  <child>content</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -228,9 +229,9 @@ describe("formatXml", () => {
         "<!-- Child level comment -->",
         "content",
         "</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <!-- Root level comment -->",
@@ -238,9 +239,9 @@ describe("formatXml", () => {
         "    <!-- Child level comment -->",
         "    content",
         "  </child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -251,17 +252,17 @@ describe("formatXml", () => {
         "<root>",
         "<child>content starts here",
         "</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <child>",
         "    content starts here",
         "  </child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -270,16 +271,16 @@ describe("formatXml", () => {
         "<root>",
         "<child>",
         "content ends here</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <child>",
         "  content ends here</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -291,19 +292,19 @@ describe("formatXml", () => {
         "Line 2 of content",
         "Line 3 of content",
         "</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <child>",
         "    Line 1 of content",
-        "    Line 2 of content", 
+        "    Line 2 of content",
         "    Line 3 of content",
         "  </child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -313,15 +314,15 @@ describe("formatXml", () => {
       const input = [
         "<root>",
         "<div class='container' id='main'>content</div>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <div class='container' id='main'>content</div>",
-        "  </root>"
+        "  </root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -329,15 +330,15 @@ describe("formatXml", () => {
       const input = [
         "<root>",
         "<img src='image.jpg' alt='Test Image' width='100' height='200' />",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <img src='image.jpg' alt='Test Image' width='100' height='200' />",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -345,35 +346,32 @@ describe("formatXml", () => {
   describe("Line break normalization", () => {
     it("should normalize Windows line breaks (\\r\\n)", () => {
       const input = "<root>\r\n<child>content</child>\r\n</root>";
-      const expected = [
-        "<root>",
-        "  <child>content</child>",
-        "</root>"
-      ].join("\n");
-      
+      const expected = ["<root>", "  <child>content</child>", "</root>"].join(
+        "\n"
+      );
+
       expect(formatXml(input)).toBe(expected);
     });
 
     it("should normalize old Mac line breaks (\\r)", () => {
       const input = "<root>\r<child>content</child>\r</root>";
-      const expected = [
-        "<root>",
-        "  <child>content</child>",
-        "</root>"
-      ].join("\n");
-      
+      const expected = ["<root>", "  <child>content</child>", "</root>"].join(
+        "\n"
+      );
+
       expect(formatXml(input)).toBe(expected);
     });
 
     it("should handle mixed line breaks", () => {
-      const input = "<root>\r\n<child1>content1</child1>\n<child2>content2</child2>\r</root>";
+      const input =
+        "<root>\r\n<child1>content1</child1>\n<child2>content2</child2>\r</root>";
       const expected = [
         "<root>",
         "  <child1>content1</child1>",
         "  <child2>content2</child2>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -397,9 +395,9 @@ describe("formatXml", () => {
         "</ul>",
         "</div>",
         "</body>",
-        "</html>"
+        "</html>",
       ].join("\n");
-      
+
       const expected = [
         "<html>",
         "  <head>",
@@ -417,9 +415,9 @@ describe("formatXml", () => {
         "      </ul>",
         "    </div>",
         "  </body>",
-        "</html>"
+        "</html>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
@@ -429,17 +427,17 @@ describe("formatXml", () => {
         "<!DOCTYPE html>",
         "<root>",
         "<data>content</data>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<?xml version='1.0' encoding='UTF-8'?>",
         "  <!DOCTYPE html>",
         "    <root>",
         "      <data>content</data>",
-        "    </root>"
+        "    </root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -473,16 +471,16 @@ describe("formatXml", () => {
         "<root>",
         "<unclosed>",
         "<child>content</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <unclosed>",
         "    <child>content</child>",
-        "  </root>"
+        "  </root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -492,20 +490,21 @@ describe("formatXml", () => {
       const input = [
         "  <root>  ",
         "    <child>  content with spaces  </child>  ",
-        "  </root>  "
+        "  </root>  ",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <child>  content with spaces  </child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
 
     it("should handle content with internal whitespace correctly (inline)", () => {
-      const input = "<root><child>multiple    spaces    between    words</child></root>";
+      const input =
+        "<root><child>multiple    spaces    between    words</child></root>";
       expect(formatXml(input)).toBe(input);
     });
 
@@ -513,15 +512,15 @@ describe("formatXml", () => {
       const input = [
         "<root>",
         "<child>multiple    spaces    between    words</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       const expected = [
         "<root>",
         "  <child>multiple    spaces    between    words</child>",
-        "</root>"
+        "</root>",
       ].join("\n");
-      
+
       expect(formatXml(input)).toBe(expected);
     });
   });
@@ -529,80 +528,66 @@ describe("formatXml", () => {
   describe("Options configuration", () => {
     describe("indentSize option", () => {
       it("should use custom indent size", () => {
-        const input = [
-          "<root>",
-          "<child>content</child>",
-          "</root>"
-        ].join("\n");
-        
+        const input = ["<root>", "<child>content</child>", "</root>"].join(
+          "\n"
+        );
+
         const options: FormatXmlOptions = { indentSize: 4 };
         const result = formatXml(input, options);
-        
+
         const expected = [
           "<root>",
           "    <child>content</child>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         expect(result).toBe(expected);
       });
 
       it("should handle single space indentation", () => {
-        const input = [
-          "<root>",
-          "<child>content</child>",
-          "</root>"
-        ].join("\n");
-        
+        const input = ["<root>", "<child>content</child>", "</root>"].join(
+          "\n"
+        );
+
         const options: FormatXmlOptions = { indentSize: 1 };
         const result = formatXml(input, options);
-        
-        const expected = [
-          "<root>",
-          " <child>content</child>",
-          "</root>"
-        ].join("\n");
-        
+
+        const expected = ["<root>", " <child>content</child>", "</root>"].join(
+          "\n"
+        );
+
         expect(result).toBe(expected);
       });
     });
 
     describe("indentType option", () => {
       it("should use tabs for indentation", () => {
-        const input = [
-          "<root>",
-          "<child>content</child>",
-          "</root>"
-        ].join("\n");
-        
-        const options: FormatXmlOptions = { indentType: 'tabs' };
+        const input = ["<root>", "<child>content</child>", "</root>"].join(
+          "\n"
+        );
+
+        const options: FormatXmlOptions = { indentType: "tabs" };
         const result = formatXml(input, options);
-        
-        const expected = [
-          "<root>",
-          "\t<child>content</child>",
-          "</root>"
-        ].join("\n");
-        
+
+        const expected = ["<root>", "\t<child>content</child>", "</root>"].join(
+          "\n"
+        );
+
         expect(result).toBe(expected);
       });
 
       it("should use spaces for indentation by default", () => {
-        const input = [
-          "<root>",
-          "<child>content</child>",
-          "</root>"
-        ].join("\n");
-        
-        const options: FormatXmlOptions = { indentType: 'spaces' };
+        const input = ["<root>", "<child>content</child>", "</root>"].join(
+          "\n"
+        );
+
+        const options: FormatXmlOptions = { indentType: "spaces" };
         const result = formatXml(input, options);
-        
-        const expected = [
-          "<root>",
-          "  <child>content</child>",
-          "</root>"
-        ].join("\n");
-        
+
+        const expected = ["<root>", "  <child>content</child>", "</root>"].join(
+          "\n"
+        );
+
         expect(result).toBe(expected);
       });
     });
@@ -614,20 +599,20 @@ describe("formatXml", () => {
           "<child>",
           "  content with spaces  ",
           "</child>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         const options: FormatXmlOptions = { trimContent: true };
         const result = formatXml(input, options);
-        
+
         const expected = [
           "<root>",
           "  <child>",
           "    content with spaces",
           "  </child>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         expect(result).toBe(expected);
       });
 
@@ -637,20 +622,20 @@ describe("formatXml", () => {
           "<child>",
           "  content with spaces  ",
           "</child>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         const options: FormatXmlOptions = { trimContent: false };
         const result = formatXml(input, options);
-        
+
         const expected = [
           "<root>",
           "  <child>",
           "      content with spaces  ",
           "  </child>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         expect(result).toBe(expected);
       });
     });
@@ -660,13 +645,11 @@ describe("formatXml", () => {
         const input = "<root>\r\n<child>content</child>\r</root>";
         const options: FormatXmlOptions = { normalizeLineBreaks: true };
         const result = formatXml(input, options);
-        
-        const expected = [
-          "<root>",
-          "  <child>content</child>",
-          "</root>"
-        ].join("\n");
-        
+
+        const expected = ["<root>", "  <child>content</child>", "</root>"].join(
+          "\n"
+        );
+
         expect(result).toBe(expected);
       });
 
@@ -674,7 +657,7 @@ describe("formatXml", () => {
         const input = "<root>\r\n<child>content</child>\r</root>";
         const options: FormatXmlOptions = { normalizeLineBreaks: false };
         const result = formatXml(input, options);
-        
+
         // Should preserve some original line break characters
         // Note: \r\n gets converted to \n during processing, but \r is preserved
         expect(result).toContain("\r");
@@ -684,26 +667,24 @@ describe("formatXml", () => {
 
     describe("combined options", () => {
       it("should apply multiple options together", () => {
-        const input = [
-          "<root>",
-          "<child>  content  </child>",
-          "</root>"
-        ].join("\n");
-        
+        const input = ["<root>", "<child>  content  </child>", "</root>"].join(
+          "\n"
+        );
+
         const options: FormatXmlOptions = {
           indentSize: 4,
-          indentType: 'spaces',
-          trimContent: true
+          indentType: "spaces",
+          trimContent: true,
         };
-        
+
         const result = formatXml(input, options);
-        
+
         const expected = [
           "<root>",
           "    <child>  content  </child>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         expect(result).toBe(expected);
       });
 
@@ -713,38 +694,36 @@ describe("formatXml", () => {
           "<level1>",
           "<level2>content</level2>",
           "</level1>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         const options: FormatXmlOptions = {
-          indentType: 'tabs'
+          indentType: "tabs",
         };
-        
+
         const result = formatXml(input, options);
-        
+
         const expected = [
           "<root>",
           "\t<level1>",
           "\t\t<level2>content</level2>",
           "\t</level1>",
-          "</root>"
+          "</root>",
         ].join("\n");
-        
+
         expect(result).toBe(expected);
       });
     });
 
     describe("default behavior", () => {
       it("should use default options when no options provided", () => {
-        const input = [
-          "<root>",
-          "<child>content</child>",
-          "</root>"
-        ].join("\n");
-        
+        const input = ["<root>", "<child>content</child>", "</root>"].join(
+          "\n"
+        );
+
         const resultWithoutOptions = formatXml(input);
         const resultWithEmptyOptions = formatXml(input, {});
-        
+
         expect(resultWithoutOptions).toBe(resultWithEmptyOptions);
       });
     });
@@ -755,44 +734,40 @@ describe("formatXml", () => {
       // Create a large nested structure with line breaks
       const depth = 50;
       const lines: string[] = [];
-      
+
       // Build opening tags
       for (let i = 0; i < depth; i++) {
         lines.push(`<level${i}>`);
       }
-      
+
       // Add content
       lines.push("deep content");
-      
+
       // Build closing tags
       for (let i = depth - 1; i >= 0; i--) {
         lines.push(`</level${i}>`);
       }
-      
+
       const input = lines.join("\n");
-      
+
       const startTime = performance.now();
       const result = formatXml(input);
       const endTime = performance.now();
-      
+
       // Check that it's properly indented
-      expect(result).toContain("                                                  deep content");
+      expect(result).toContain(
+        "                                                  deep content"
+      );
       expect(endTime - startTime).toBeLessThan(100); // Should complete in reasonable time
     });
 
     it("should be consistent across multiple calls", () => {
-      const input = [
-        "<root>",
-        "<child>content</child>",
-        "</root>"
-      ].join("\n");
-      
-      const expected = [
-        "<root>",
-        "  <child>content</child>",
-        "</root>"
-      ].join("\n");
-      
+      const input = ["<root>", "<child>content</child>", "</root>"].join("\n");
+
+      const expected = ["<root>", "  <child>content</child>", "</root>"].join(
+        "\n"
+      );
+
       // Run multiple times to ensure consistency
       for (let i = 0; i < 100; i++) {
         expect(formatXml(input)).toBe(expected);
@@ -801,7 +776,7 @@ describe("formatXml", () => {
 
     it("should handle inline XML consistently", () => {
       const input = "<root><child>content</child></root>";
-      
+
       // Run multiple times to ensure consistency
       for (let i = 0; i < 100; i++) {
         expect(formatXml(input)).toBe(input);
@@ -809,21 +784,17 @@ describe("formatXml", () => {
     });
 
     it("should handle options performance efficiently", () => {
-      const input = [
-        "<root>",
-        "<child>content</child>",
-        "</root>"
-      ].join("\n");
-      
+      const input = ["<root>", "<child>content</child>", "</root>"].join("\n");
+
       const options: FormatXmlOptions = { indentSize: 4, trimContent: true };
-      
+
       const startTime = performance.now();
       for (let i = 0; i < 1000; i++) {
         formatXml(input, options);
       }
       const endTime = performance.now();
-      
+
       expect(endTime - startTime).toBeLessThan(1000); // Should complete 1000 calls in reasonable time
     });
   });
-}); 
+});

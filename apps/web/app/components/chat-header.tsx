@@ -4,12 +4,12 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ onClearChat }: ChatHeaderProps) {
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-      <div className="max-w-4xl mx-auto flex items-center justify-between">
+    <header className="border-gray-200 border-b bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+      <div className="mx-auto flex max-w-4xl items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
             <svg
-              className="w-5 h-5 text-white"
+              className="h-5 w-5 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -24,10 +24,10 @@ export function ChatHeader({ onClearChat }: ChatHeaderProps) {
             </svg>
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h1 className="font-semibold text-gray-900 text-lg dark:text-gray-100">
               AI Agents Chat
             </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-gray-500 text-xs dark:text-gray-400">
               Calculator • Weather • Assistant
             </p>
           </div>
@@ -36,10 +36,10 @@ export function ChatHeader({ onClearChat }: ChatHeaderProps) {
         <button
           type="button"
           onClick={onClearChat}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-gray-600 text-sm transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100"
         >
           <svg
-            className="w-4 h-4"
+            className="h-4 w-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

@@ -36,12 +36,12 @@ export function MessageInput({
       textarea.style.height = "auto";
       textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
     }
-  }, [message]);
+  }, []);
 
   return (
     <form onSubmit={handleSubmit} className="relative">
       <div className="flex items-end gap-3">
-        <div className="flex-1 relative">
+        <div className="relative flex-1">
           <textarea
             ref={textareaRef}
             value={message}
@@ -49,7 +49,7 @@ export function MessageInput({
             onKeyDown={handleKeyDown}
             placeholder="Type your message... (Shift+Enter for new line)"
             rows={1}
-            className="w-full px-4 py-3 pr-20 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
+            className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 pr-20 text-gray-900 placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             disabled={isLoading}
           />
 
@@ -58,10 +58,10 @@ export function MessageInput({
               <button
                 type="button"
                 onClick={onStopGeneration}
-                className="inline-flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-200"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -85,10 +85,10 @@ export function MessageInput({
               <button
                 type="submit"
                 disabled={!message.trim() || isLoading}
-                className="inline-flex items-center justify-center w-8 h-8 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-600"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -107,7 +107,7 @@ export function MessageInput({
         </div>
       </div>
 
-      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+      <div className="mt-2 text-center text-gray-500 text-xs dark:text-gray-400">
         AI can make mistakes. Please verify important information.
       </div>
     </form>

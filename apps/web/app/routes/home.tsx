@@ -13,13 +13,13 @@ export default function Home() {
   return (
     <div>
       <Welcome />
-      <div className="fixed bottom-8 right-8">
+      <div className="fixed right-8 bottom-8">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+          className="inline-flex transform items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:bg-blue-700 hover:shadow-xl"
         >
           <svg
-            className="w-5 h-5"
+            className="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

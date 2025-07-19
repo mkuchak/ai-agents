@@ -1,4 +1,4 @@
-import { type Message, useAutoScroll, useChat } from "../hooks";
+import { useAutoScroll, useChat } from "../hooks";
 import { ChatHeader } from "./chat-header";
 import { MessageBubble } from "./message-bubble";
 import { MessageInput } from "./message-input";
@@ -9,17 +9,17 @@ export function ChatInterface() {
   const { scrollRef } = useAutoScroll({ dependency: messages });
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-900">
       <ChatHeader onClearChat={clearChat} />
 
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto px-4 py-6">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="mx-auto max-w-4xl space-y-6">
             {messages.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
+              <div className="py-12 text-center">
+                <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
                   <svg
-                    className="w-8 h-8 text-blue-600 dark:text-blue-400"
+                    className="h-8 w-8 text-blue-600 dark:text-blue-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -33,14 +33,14 @@ export function ChatInterface() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                <h3 className="mb-2 font-medium text-gray-900 text-lg dark:text-gray-100">
                   Welcome to AI Agents Chat
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                <p className="mx-auto mb-6 max-w-md text-gray-600 dark:text-gray-400">
                   I can help you with calculations, weather information, and
                   general questions. Try asking me something like:
                 </p>
-                <div className="flex flex-wrap gap-2 justify-center">
+                <div className="flex flex-wrap justify-center gap-2">
                   {[
                     "What is 25 * 4?",
                     "What's the weather in Paris?",
@@ -50,7 +50,7 @@ export function ChatInterface() {
                       key={example}
                       type="button"
                       onClick={() => sendMessage(example)}
-                      className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750"
                     >
                       {example}
                     </button>
@@ -66,8 +66,8 @@ export function ChatInterface() {
           </div>
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="border-gray-200 border-t bg-white dark:border-gray-700 dark:bg-gray-800">
+          <div className="mx-auto max-w-4xl px-4 py-4">
             <MessageInput
               onSendMessage={sendMessage}
               isLoading={isLoading}

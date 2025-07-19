@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { formatDateTime, type FormatOptions, type FormattedDateTime } from "./format-date-time";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { formatDateTime } from "./format-date-time";
 
 describe("formatDateTime", () => {
   // Use a fixed date for consistent testing

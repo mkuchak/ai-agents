@@ -5,11 +5,10 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "biome lint .",
-    "lint:fix": "biome lint . --write",
+    "lint:fix": "biome check . --write --unsafe",
     "format": "biome format .",
     "format:fix": "biome format . --write",
     "format-and-lint": "biome check .",
-    "format-and-lint:fix": "biome check . --write",
     "check-types": "turbo run check-types"
   },
   "devDependencies": {

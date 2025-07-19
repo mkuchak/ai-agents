@@ -140,7 +140,7 @@ async function getCachedDataFallback(): Promise<LlmProvider | null> {
 
     const cacheContent = await fs.readFile(CACHE_FILE, "utf-8");
     return JSON.parse(cacheContent) as LlmProvider;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

@@ -21,7 +21,10 @@ export function jsonParse<T>(json?: string | null): T | undefined {
     const repairedJson = jsonrepair(cleanedJson);
     return JSON.parse(repairedJson) as T;
   } catch (error) {
-    console.error("Failed to parse JSON:", error instanceof Error ? error.message : String(error));
+    console.error(
+      "Failed to parse JSON:",
+      error instanceof Error ? error.message : String(error)
+    );
     return undefined;
   }
 }
@@ -31,38 +34,40 @@ export function jsonParse<T>(json?: string | null): T | undefined {
  */
 function isLikelyJson(text: string): boolean {
   if (!text) return false;
-  
+
   // Objects and arrays
-  if (text.startsWith('{') || text.startsWith('[')) {
+  if (text.startsWith("{") || text.startsWith("[")) {
     return true;
   }
-  
+
   // JSON primitives
   if (text.startsWith('"') && text.endsWith('"')) {
     return true; // JSON string
   }
-  
+
   // Numbers (including negative, decimals, scientific notation)
   if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(text)) {
     return true;
   }
-  
+
   // Booleans and null
-  if (text === 'true' || text === 'false' || text === 'null') {
+  if (text === "true" || text === "false" || text === "null") {
     return true;
   }
-  
+
   // If it contains quotes and colons, it might be malformed JSON that jsonrepair can fix
-  if (text.includes(':') && (text.includes('"') || text.includes("'"))) {
+  if (text.includes(":") && (text.includes('"') || text.includes("'"))) {
     return true;
   }
-  
+
   // If it has array-like or object-like structure (even malformed)
-  if ((text.includes('[') && text.includes(']')) || 
-      (text.includes('{') && text.includes('}'))) {
+  if (
+    (text.includes("[") && text.includes("]")) ||
+    (text.includes("{") && text.includes("}"))
+  ) {
     return true;
   }
-  
+
   // Plain text without JSON structure
   return false;
 }
