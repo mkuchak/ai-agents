@@ -1,6 +1,6 @@
-import { Tool } from "./agent";
 import { z } from "zod";
-import agentRegistry from "./agent-registry";
+import type { Tool } from "./agent";
+import { AgentRegistry } from "./agent-registry";
 
 /**
  * Schema for the handoff tool input
@@ -8,7 +8,9 @@ import agentRegistry from "./agent-registry";
 export const handoffSchema = z.object({
   targetVerticalId: z
     .string()
-    .describe("The ID of the vertical to move to. Must be a registered vertical in the registry."),
+    .describe(
+      "The ID of the vertical to move to. Must be a registered vertical in the registry."
+    ),
 });
 
 export type HandoffInput = z.infer<typeof handoffSchema>;
@@ -22,35 +24,33 @@ export type HandoffResult = {
  * Implementation of the handoff tool
  * This tool allows an agent to delegate tasks to another agent
  */
-export const handoffTool: Tool<typeof handoffSchema, { accountId: string; currentVerticalId?: string }> = {
+export const handoffTool: Tool<
+  typeof handoffSchema,
+  { currentVerticalId?: string }
+> = {
   name: "load_skills_from",
   description:
     "Load skills from another vertical domain when the current task requires specialized capabilities not available in your domain.",
   schema: handoffSchema,
   execute: async (
     input: HandoffInput,
-    context?: { accountId: string; currentVerticalId?: string }
+    context?: { currentVerticalId?: string }
   ): Promise<HandoffResult> => {
-    if (!context?.accountId) {
-      return {
-        status: "error",
-        message: "Account ID is required for skill loading",
-      };
-    }
-
     // Validate that the target agent exists in the registry
-    const targetAgent = agentRegistry.getAgent(input.targetVerticalId);
+    const targetAgent = AgentRegistry.getInstance().getAgent(
+      input.targetVerticalId
+    );
     if (!targetAgent) {
       return {
         status: "error",
-        message: `Target vertical with ID '${input.targetVerticalId}' not found. Available verticals: ${agentRegistry
+        message: `Target vertical with ID '${input.targetVerticalId}' not found. Available verticals: ${AgentRegistry.getInstance()
           .getAllAgentIds()
           .join(", ")}`,
       };
     }
 
     // Validate that we're not loading skills from the same agent
-    if (context.currentVerticalId === input.targetVerticalId) {
+    if (context?.currentVerticalId === input.targetVerticalId) {
       return {
         status: "error",
         message: `Cannot load skills from the same vertical (${input.targetVerticalId}). Choose a different vertical with appropriate capabilities.`,

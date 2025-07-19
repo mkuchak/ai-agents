@@ -1,13 +1,18 @@
-import { Agent, Message, OnMessage } from "./agent";
+import dedent from "dedent";
+import type {
+  AgentInterface,
+  Message,
+  OnMessage,
+  StreamingCallback,
+} from "./agent";
 import { AgentRegistry } from "./agent-registry";
 import { handoffTool } from "./handoff-tool";
-import dedent from "dedent";
 
 /**
  * Interface defining context for the agent orchestrator
  */
 export interface OrchestratorContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -15,7 +20,8 @@ export interface OrchestratorContext {
  * managing handoffs between them while maintaining a single conversation thread.
  */
 export class AgentOrchestrator {
-  private agents: Map<string, Agent<any>> = new Map();
+  private agents: Map<string, AgentInterface<{ currentVerticalId?: string }>> =
+    new Map();
   private gatekeeperAgentId: string;
   private maxSteps: number;
 
@@ -37,7 +43,7 @@ export class AgentOrchestrator {
    */
   registerAgent(
     agentId: string,
-    agent: Agent<any>,
+    agent: AgentInterface<{ currentVerticalId?: string }>,
     capabilities: string[] = []
   ): void {
     // Register with the registry
@@ -62,9 +68,8 @@ export class AgentOrchestrator {
     }
 
     const agentInfos = agentIds.map((agentId) => {
-      const capabilities =
-        (AgentRegistry.getInstance().getAgent(agentId) as any)?._capabilities ||
-        [];
+      const registeredAgent = AgentRegistry.getInstance().getAgent(agentId);
+      const capabilities = registeredAgent?._capabilities || [];
       return `- ${agentId}: ${capabilities.join(", ")}`;
     });
 
@@ -124,15 +129,17 @@ export class AgentOrchestrator {
    */
   async run({
     message,
-    history,
-    context,
+    history = [],
+    context = {},
     onMessage,
+    onStreamingChunk,
     preferredAgentId,
   }: {
     message: Message;
-    history: Message[];
-    context: OrchestratorContext;
-    onMessage: OnMessage;
+    history?: Message[];
+    context?: OrchestratorContext;
+    onMessage?: OnMessage;
+    onStreamingChunk?: StreamingCallback;
     preferredAgentId?: string;
   }): Promise<Message[]> {
     // Create a new sequence for each execution
@@ -146,6 +153,7 @@ export class AgentOrchestrator {
       history,
       context,
       onMessage,
+      onStreamingChunk,
       steps: 0,
       handoffSequence, // Pass the sequence as a parameter
     });
@@ -169,6 +177,7 @@ export class AgentOrchestrator {
     history,
     context,
     onMessage,
+    onStreamingChunk,
     steps,
     handoffSequence,
   }: {
@@ -176,7 +185,8 @@ export class AgentOrchestrator {
     message?: Message;
     history: Message[];
     context: OrchestratorContext;
-    onMessage: OnMessage;
+    onMessage?: OnMessage;
+    onStreamingChunk?: StreamingCallback;
     steps: number;
     handoffSequence: string[];
   }): Promise<Message[]> {
@@ -194,7 +204,7 @@ export class AgentOrchestrator {
           },
         },
       };
-      await onMessage(errorMessage);
+      await onMessage?.(errorMessage);
       return [errorMessage];
     }
 
@@ -212,11 +222,11 @@ export class AgentOrchestrator {
     // The wrapped onMessage callback that stores messages and forwards them
     const wrappedOnMessage: OnMessage = async (msg) => {
       allMessages.push(msg);
-      await onMessage(msg);
+      await onMessage?.(msg);
     };
 
     // Temporarily store original system prompt
-    const originalSystemPrompt = (agent as any).systemPrompt;
+    const originalSystemPrompt = agent.systemPrompt;
 
     // Inject agent capabilities information into system prompt
     if (originalSystemPrompt) {
@@ -224,7 +234,7 @@ export class AgentOrchestrator {
         originalSystemPrompt,
         agentId
       );
-      (agent as any).systemPrompt = enhancedSystemPrompt;
+      agent.systemPrompt = enhancedSystemPrompt;
     }
 
     try {
@@ -234,6 +244,7 @@ export class AgentOrchestrator {
         history,
         context,
         onMessage: wrappedOnMessage,
+        onStreamingChunk,
       });
 
       // Check if skills loading was requested
@@ -245,17 +256,14 @@ export class AgentOrchestrator {
         )
         .pop();
 
-      if (
-        lastToolMessage &&
-        lastToolMessage.metadata?.tool?.input?.targetVerticalId
-      ) {
+      if (lastToolMessage?.metadata?.tool?.input?.targetVerticalId) {
         const targetVerticalId =
           lastToolMessage.metadata?.tool?.input?.targetVerticalId;
 
         console.log(`Handoff requested from ${agentId} to ${targetVerticalId}`);
 
         // Get the target agent
-        const targetAgent = this.agents.get(targetVerticalId);
+        const targetAgent = this.agents.get(targetVerticalId as string);
         if (!targetAgent) {
           console.error(`Target agent ${targetVerticalId} not found`);
           return allMessages;
@@ -284,10 +292,11 @@ export class AgentOrchestrator {
 
         // Recursively invoke the target agent with incremented steps
         const targetAgentMessages = await this.invokeAgent({
-          agentId: targetVerticalId,
+          agentId: targetVerticalId as string,
           history: fullHistory,
           context,
           onMessage,
+          onStreamingChunk,
           steps: steps + 1,
           handoffSequence,
         });
@@ -301,7 +310,7 @@ export class AgentOrchestrator {
     } finally {
       // Restore original system prompt to avoid accumulating injections
       if (originalSystemPrompt) {
-        (agent as any).systemPrompt = originalSystemPrompt;
+        agent.systemPrompt = originalSystemPrompt;
       }
     }
   }

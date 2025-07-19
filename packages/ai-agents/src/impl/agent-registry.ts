@@ -1,4 +1,4 @@
-import { Agent } from "./agent";
+import type { AgentInterface, ExtendedAgentInterface } from "./agent";
 
 /**
  * AgentRegistry provides a centralized registry for all agents in the system
@@ -6,7 +6,7 @@ import { Agent } from "./agent";
  */
 export class AgentRegistry {
   private static instance: AgentRegistry;
-  private agents: Map<string, Agent<any>> = new Map();
+  private agents: Map<string, ExtendedAgentInterface> = new Map();
 
   // Use singleton pattern to ensure only one registry exists
   public static getInstance(): AgentRegistry {
@@ -25,9 +25,9 @@ export class AgentRegistry {
    * @param agent The agent instance
    * @param capabilities Optional array of capabilities this agent has
    */
-  public registerAgent(
+  public registerAgent<C = unknown>(
     agentId: string,
-    agent: Agent<any>,
+    agent: AgentInterface<C>,
     capabilities: string[] = []
   ): void {
     if (this.agents.has(agentId)) {
@@ -39,12 +39,15 @@ export class AgentRegistry {
     // Enable agent handoff
     agent?.enableHandoff();
 
-    // Store the agent with its metadata
-    this.agents.set(agentId, agent);
+    // Create extended agent with metadata
+    const extendedAgent: ExtendedAgentInterface<C> = {
+      ...agent,
+      _capabilities: capabilities,
+      _id: agentId,
+    };
 
-    // Add capabilities to the agent (used for capability-based routing)
-    (agent as any)._capabilities = capabilities;
-    (agent as any)._id = agentId;
+    // Store the agent with its metadata
+    this.agents.set(agentId, extendedAgent);
   }
 
   /**
@@ -52,7 +55,7 @@ export class AgentRegistry {
    * @param agentId The unique identifier of the agent
    * @returns The agent instance or undefined if not found
    */
-  public getAgent(agentId: string): Agent<any> | undefined {
+  public getAgent(agentId: string): ExtendedAgentInterface | undefined {
     return this.agents.get(agentId);
   }
 
@@ -65,7 +68,7 @@ export class AgentRegistry {
     const agentIds: string[] = [];
 
     this.agents.forEach((agent, agentId) => {
-      const capabilities = (agent as any)._capabilities || [];
+      const capabilities = agent._capabilities || [];
       if (capabilities.includes(capability)) {
         agentIds.push(agentId);
       }

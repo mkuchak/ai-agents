@@ -1,12 +1,12 @@
+import dedent from "dedent";
+import * as z from "zod";
 import {
   formatDateTime,
-  type TimeZone,
   type Locale,
+  type TimeZone,
 } from "../utils/format-date-time";
 import { formatXml } from "../utils/format-xml";
 import { jsonParse } from "../utils/json-parse";
-import dedent from "dedent";
-import * as z from "zod";
 
 // Default configuration constants
 const DEFAULT_TIMEZONE: TimeZone = "America/New_York";
@@ -41,6 +41,18 @@ export type TokenUsage = {
   cost?: number;
 };
 
+// Interface for tool input/output that can be serialized
+export interface SerializableValue {
+  [key: string]: unknown;
+}
+
+// Interface for tool metadata with proper typing
+export interface ToolMetadata {
+  name: string;
+  input: SerializableValue | null;
+  output: SerializableValue;
+}
+
 export type Metadata = {
   error?: {
     message: string;
@@ -51,11 +63,7 @@ export type Metadata = {
     thought?: string;
     isFinalAnswer?: boolean;
   };
-  tool?: {
-    name: string;
-    input: any;
-    output: any;
-  };
+  tool?: ToolMetadata;
   usage?: TokenUsage;
 };
 
@@ -78,11 +86,38 @@ export type CallLlmResponse = {
   usage?: TokenUsage;
 };
 
-export type CallLlm = (input: string) => Promise<CallLlmResponse> | undefined;
+// Type for the streaming callback function
+export type StreamingCallback = (chunk: string) => void;
+
+export type CallLlm = (
+  input: string,
+  onStreamingChunk?: StreamingCallback
+) => Promise<CallLlmResponse> | undefined;
 
 export type OnMessage = (message: Message) => void | Promise<void>;
 
-export class Agent<C = unknown> {
+// Interface for agents that can be managed by the registry and orchestrator
+export interface AgentInterface<C = unknown> {
+  systemPrompt: string;
+  enableHandoff(): void;
+  disableHandoff(): void;
+  registerTool<T extends z.ZodType>(tool: Tool<T, C>): void;
+  run(params: {
+    message?: Message;
+    history?: Message[];
+    onMessage?: OnMessage;
+    onStreamingChunk?: StreamingCallback;
+    context?: C;
+  }): Promise<Message[]>;
+}
+
+// Extended interface for registry management
+export interface ExtendedAgentInterface<C = unknown> extends AgentInterface<C> {
+  _id: string;
+  _capabilities: string[];
+}
+
+export class Agent<C = unknown> implements AgentInterface<C> {
   private tools: Map<string, Tool<z.ZodType, C>> = new Map();
   private _systemPrompt: string;
   private callLlm: CallLlm;
@@ -429,13 +464,8 @@ export class Agent<C = unknown> {
     }
 
     try {
-      // Check if toolInput is already valid JSON or needs to be parsed
-      let parsedInput;
-      try {
-        parsedInput = jsonParse(toolInput);
-      } catch (e) {
-        // If toolInput is not valid JSON, it might already be the object we need
-        // This should not happen with the fix above, but adding as a safeguard
+      const parsedInput = jsonParse(toolInput);
+      if (!parsedInput) {
         return JSON.stringify({ error: "Invalid JSON input" });
       }
 
@@ -443,7 +473,7 @@ export class Agent<C = unknown> {
       const result = await tool.execute(validatedInput, context as C);
 
       return JSON.stringify(result);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return JSON.stringify({
           error: `Invalid tool input - ${error.issues
@@ -467,11 +497,13 @@ export class Agent<C = unknown> {
     message,
     history = [],
     onMessage,
+    onStreamingChunk,
     context,
   }: {
     message?: Message;
     history?: Message[];
     onMessage?: OnMessage;
+    onStreamingChunk?: StreamingCallback;
     context?: C;
   }): Promise<Message[]> {
     const messages: Message[] = [];
@@ -529,7 +561,7 @@ export class Agent<C = unknown> {
         [...history, ...messages],
         this._systemPrompt
       );
-      const response = await this.callLlm(prompt);
+      const response = await this.callLlm(prompt, onStreamingChunk);
 
       if (!response) {
         throw new Error("Failed to get response from LLM");
@@ -590,28 +622,25 @@ export class Agent<C = unknown> {
             // Stop processing with this agent - the orchestrator will take over
             isRunning = false;
           }
-        } catch (error) {
+        } catch (error: unknown) {
           console.error("Error parsing handoff tool output:", error);
         }
       }
 
       // Parse the tool output safely
-      let parsedToolOutput;
-      try {
-        parsedToolOutput = jsonParse(toolOutput);
-      } catch (error) {
-        // If parsing fails, wrap the raw output in an object
-        parsedToolOutput = {
+      // If parsing fails, wrap the raw output in an object
+      const parsedToolOutput: SerializableValue =
+        jsonParse(toolOutput) ||
+        ({
           error: `Failed to parse tool output: ${toolOutput}`,
-        };
-      }
+        } as SerializableValue);
 
       await addMessage({
         role: "tool",
         metadata: {
           tool: {
             name: parsed.action.tool,
-            input: jsonParse(parsed.action.input),
+            input: jsonParse(parsed.action.input) || null,
             output: parsedToolOutput,
           },
         },

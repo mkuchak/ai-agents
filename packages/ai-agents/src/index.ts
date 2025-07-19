@@ -1,3 +1,12 @@
+// Interfaces
+export type {
+  AgentInterface,
+  ExtendedAgentInterface,
+  SerializableValue,
+  StreamingCallback,
+  ToolMetadata,
+} from "./impl/agent";
+
 // Implementation
 export * from "./impl/agent";
 export * from "./impl/agent-orchestrator";
