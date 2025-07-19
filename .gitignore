@@ -36,3 +36,9 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Cache directory for LLM pricing data
+.cache/
+
+# Test artifacts
+*.test-cache

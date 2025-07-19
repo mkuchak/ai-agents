@@ -1,0 +1,22 @@
+{
+  "name": "@repo/llm-prices",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "lint": "biome lint . --max-diagnostics 0",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run --reporter=verbose src/**/*.unit.test.ts",
+    "test:integration": "vitest run --reporter=verbose src/**/*.integration.test.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "typescript": "5.8.2",
+    "vitest": "^3.2.4"
+  }
+}
