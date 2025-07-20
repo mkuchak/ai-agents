@@ -1,15 +1,13 @@
 import dedent from "dedent";
 import * as z from "zod";
+import type { AgentInterface } from "../contracts/agent";
 import type {
-  AgentInterface,
   CallLlm,
   LlmResponseFormat,
-  Message,
-  OnMessage,
-  SerializableValue,
   StreamingCallback,
-  Tool,
-} from "../contracts/agent";
+} from "../contracts/llm";
+import type { Message, OnMessage } from "../contracts/message";
+import type { SerializableValue, Tool } from "../contracts/tool";
 import {
   formatDateTime,
   type Locale,

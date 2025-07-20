@@ -1,6 +1,6 @@
-import type { Tool } from "../contracts/agent";
 import type { HandoffInput, HandoffResult } from "../contracts/handoff";
 import { handoffSchema } from "../contracts/handoff";
+import type { Tool } from "../contracts/tool";
 import { AgentRegistry } from "./agent-registry";
 
 /**

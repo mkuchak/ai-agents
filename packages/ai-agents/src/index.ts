@@ -1,7 +1,10 @@
 // Contracts (types and interfaces)
 export * from "./contracts/agent";
 export * from "./contracts/handoff";
+export * from "./contracts/llm";
+export * from "./contracts/message";
 export * from "./contracts/orchestrator";
+export * from "./contracts/tool";
 
 // Implementation
 export * from "./impl/agent";

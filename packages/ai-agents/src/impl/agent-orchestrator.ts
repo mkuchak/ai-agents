@@ -1,10 +1,7 @@
 import dedent from "dedent";
-import type {
-  AgentInterface,
-  Message,
-  OnMessage,
-  StreamingCallback,
-} from "../contracts/agent";
+import type { AgentInterface } from "../contracts/agent";
+import type { StreamingCallback } from "../contracts/llm";
+import type { Message, OnMessage } from "../contracts/message";
 import type { OrchestratorContext } from "../contracts/orchestrator";
 import { AgentRegistry } from "./agent-registry";
 import { handoffTool } from "./handoff-tool";
