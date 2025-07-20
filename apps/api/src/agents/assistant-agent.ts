@@ -10,26 +10,50 @@ export const assistantAgent = new Agent(
 
 assistantAgent.registerTool({
   name: "get_weather",
-  description:
-    "Get the weather for a given location using latitude and longitude coordinates",
+  description: "Get the weather for a given city name",
   schema: z.object({
-    latitude: z.number().min(-90).max(90),
-    longitude: z.number().min(-180).max(180),
+    cityName: z.string().min(1, "City name is required"),
   }),
   execute: async (input) => {
     console.log("get_weather input:", JSON.stringify(input, null, 2));
 
     try {
-      const { latitude, longitude } = input;
-      const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m&timezone=America%2FSao_Paulo&forecast_days=1`;
+      const { cityName } = input;
 
-      const response = await fetch(apiUrl);
+      // First, get coordinates from city name
+      const geocodingUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1`;
 
-      if (!response.ok) {
-        throw new Error(`Weather API request failed: ${response.status}`);
+      const geocodingResponse = await fetch(geocodingUrl);
+
+      if (!geocodingResponse.ok) {
+        throw new Error(
+          `Geocoding API request failed: ${geocodingResponse.status}`
+        );
       }
 
-      const weatherData = await response.json();
+      const geocodingData = await geocodingResponse.json();
+
+      if (!geocodingData.results || geocodingData.results.length === 0) {
+        return {
+          content: `Could not find coordinates for city: ${cityName}. Please check the city name and try again.`,
+        };
+      }
+
+      const location = geocodingData.results[0];
+      const { latitude, longitude, name: foundCityName, country } = location;
+
+      // Now get weather data using the coordinates
+      const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m&forecast_days=1`;
+
+      const weatherResponse = await fetch(weatherApiUrl);
+
+      if (!weatherResponse.ok) {
+        throw new Error(
+          `Weather API request failed: ${weatherResponse.status}`
+        );
+      }
+
+      const weatherData = await weatherResponse.json();
 
       const dailyData = weatherData.daily;
       const hourlyData = weatherData.hourly;
@@ -39,11 +63,10 @@ assistantAgent.registerTool({
       const currentTemp = hourlyData.temperature_2m[0];
 
       const weatherReport = dedent`
-        Weather forecast for coordinates (${latitude}, ${longitude}):
+        Weather forecast for ${foundCityName}, ${country}:
         * Current temperature: ${currentTemp}°C
         * Today's maximum: ${maxTemp}°C
-        * Today's minimum: ${minTemp}°C
-        * Timezone: America/Sao_Paulo`;
+        * Today's minimum: ${minTemp}°C`;
 
       return {
         content: weatherReport,
