@@ -64,7 +64,7 @@ export class AgentOrchestrator {
     const agentInfos = agentIds.map((agentId) => {
       const registeredAgent = AgentRegistry.getInstance().getAgent(agentId);
       const capabilities = registeredAgent?._capabilities || [];
-      return `- ${agentId}: ${capabilities.join(", ")}`;
+      return `- The vertical agent ID \`${agentId}\` can ${capabilities.join(", ")}`;
     });
 
     return dedent`
@@ -76,8 +76,9 @@ export class AgentOrchestrator {
         </available_verticals>
 
         <vertical_system_explanation>
-          You are currently operating in the ${currentAgentId} vertical domain.
-          If needed, you can load skills from other verticals for specialized capabilities.
+          * You are currently operating in the ${currentAgentId} vertical domain.
+          * If needed, you can load skills from other verticals for specialized capabilities.
+          * WHEN CHANGE THE VERTICAL CALL THE \`load_skills_from\` TOOL TO LOAD THE SKILLS FROM THE NEW VERTICAL WITH THE EXACTELY TARGET VERTICAL ID
         </vertical_system_explanation>
       </verticals_info>
     `;

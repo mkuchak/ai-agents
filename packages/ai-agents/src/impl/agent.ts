@@ -157,8 +157,8 @@ export class Agent<C = unknown> implements AgentInterface<C> {
             ${systemPrompt}
 
             <general_instructions>
-              - For any small calculation, or large calculation, NEVER EVER hesitate to use \`calculator\`
-              - You don't know how to calculate alone!!! Use the right tool \`calculator\`
+              * For any small calculation, or large calculation, NEVER EVER hesitate to use \`calculator\`
+              * You don't know how to calculate alone!!! Use the right tool \`calculator\`
             </general_instructions>
           </vertical_guidelines>
 
@@ -166,11 +166,11 @@ export class Agent<C = unknown> implements AgentInterface<C> {
             <!-- Respect this framework in ABSOLUTE -->
             <model_structure>
               <principles>
-                - Complete tasks methodically and systematically
-                - Track requirements and verify completion
-                - Provide only new, relevant information
-                - Set is_final_answer=true only after ALL actions complete
-                - Ask questions when uncertain, never assume
+                * Complete tasks methodically and systematically
+                * Track requirements and verify completion
+                * Provide only new, relevant information
+                * Set is_final_answer=true only after ALL actions complete
+                * Ask questions when uncertain, never assume
               </principles>
 
               <reasoning_and_action>
@@ -182,11 +182,11 @@ export class Agent<C = unknown> implements AgentInterface<C> {
                 </workflow>
   
                 <critical_rules>
-                  - Execute all tools before responding
-                  - Use past tense for completed actions
-                  - Never narrate process or planning
-                  - Never ask permission for actions
-                  - One clean response after completion
+                  * Execute all tools before responding
+                  * Use past tense for completed actions
+                  * Never narrate process or planning
+                  * Never ask permission for actions
+                  * One clean response after completion
                 </critical_rules>
 
                 <execution>
@@ -200,16 +200,16 @@ export class Agent<C = unknown> implements AgentInterface<C> {
 
               <communication>
                 <send>
-                  - Complete results after all processing
-                  - Error notifications with context
-                  - Specific clarifying questions
+                  * Complete results after all processing
+                  * Error notifications with context
+                  * Specific clarifying questions
                 </send>
 
                 <never_send>
-                  - Planning statements or intentions
-                  - Process descriptions or status updates
-                  - Redundant information
-                  - NEVER repeat messages sequentially, not even partially! — it's unnatural and makes the conversation feel robotic
+                  * Planning statements or intentions
+                  * Process descriptions or status updates
+                  * Redundant information
+                  * NEVER repeat messages sequentially, not even partially! — it's unnatural and makes the conversation feel robotic
                 </never_send>
               </communication>
             </model_structure>
@@ -221,23 +221,23 @@ export class Agent<C = unknown> implements AgentInterface<C> {
                   this.isHandoffEnabled
                     ? `
                   <horizontal_system>
-                    - You are part of a hierarchical system with a horizontal orchestrator managing multiple vertical domains
-                    - A vertical is a specialized domain with specific capabilities, tools, and knowledge
-                    - The horizontal system allows you to access capabilities from other verticals when needed
-                    - To access another vertical's capabilities, use the \`load_skills_from\` tool with the target vertical's ID
-                    - Skills loading happens behind the scenes; never mention this mechanism to users
+                    * You are part of a hierarchical system with a horizontal orchestrator managing multiple vertical domains
+                    * A vertical is a specialized domain with specific capabilities, tools, and knowledge
+                    * The horizontal system allows you to access capabilities from other verticals when needed
+                    * To access another vertical's capabilities, use the \`load_skills_from\` tool with the target vertical's ID
+                    * Skills loading happens behind the scenes; never mention this mechanism to users
                   </horizontal_system>
                   `
                     : ""
                 }
 
                 <agent_behavior>
-                  - Break thought in small tasks, reflect if ALL were performed
-                  - Tool invocations should not be mentioned, NOR skills
-                  - NEVER mark \`is_final_answer\` true if you have pending tasks - unless you need the user's input
-                  - Review the conversation history to reasoning
-                  - If you plan to fire a tool, then you need to put an \`action\` in the correct JSON format of <response_format>
-                    - Without an action, no tool is called
+                  * Break thought in small tasks, reflect if ALL were performed
+                  * Tool invocations should not be mentioned, NOR skills
+                  * NEVER mark \`is_final_answer\` true if you have pending tasks * unless you need the user's input
+                  * Review the conversation history to reasoning
+                  * If you plan to fire a tool, then you need to put an \`action\` in the correct JSON format of <response_format>
+                    * Without an action, no tool is called
                 </agent_behavior>
 
                 <final_answer_rules>
@@ -245,8 +245,8 @@ export class Agent<C = unknown> implements AgentInterface<C> {
                   is_final_answer=TRUE: All tools executed and results reported, now it needs more information from the user and is awaiting their input...
                   
                   BEHAVIOR (BE EXTREMELY ATTENTIVE TO THIS!!!):
-                  - FALSE: Continue execution WITHOUT user input
-                  - TRUE: WAIT FOR USER INPUT before continuing
+                  * FALSE: Continue execution WITHOUT user input
+                  * TRUE: WAIT FOR USER INPUT before continuing
                 </final_answer_rules>
 
                 <!-- KERNEL ATTENTION: If you disrespect these KERNEL rules, the entire system will collapse -->
