@@ -40,8 +40,7 @@ app.post("/chat", async (req, res) => {
       console.log("Message:", JSON.stringify(message, null, 2));
       totalCost += message.metadata?.usage?.cost ?? 0;
     },
-    onStreamingChunk: (chunk, metadata) => {
-      console.log("Metadata:", JSON.stringify(metadata, null, 2));
+    onStreamingChunk: (chunk) => {
       res.write(chunk);
     },
     onToolResult: (toolResult) => {

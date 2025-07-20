@@ -95,23 +95,15 @@ export type CallLlmResponse = {
  * Called for each chunk of data as it's received from the LLM.
  *
  * @param chunk - A piece of the streaming response text
- * @param type - Optional type indicator to distinguish content types ('text' | 'tool_result')
  *
  * @example
  * ```typescript
- * const streamHandler: StreamingCallback = (chunk: string, type?: 'text' | 'tool_result') => {
- *   if (type === 'tool_result') {
- *     console.log('Tool result:', chunk);
- *   } else {
- *     process.stdout.write(chunk); // Display text chunk in real-time
- *   }
+ * const streamHandler: StreamingCallback = (chunk: string) => {
+ *   process.stdout.write(chunk); // Display text chunk in real-time
  * };
  * ```
  */
-export type StreamingCallback = (
-  chunk: string,
-  type?: "text" | "tool_result"
-) => void;
+export type StreamingCallback = (chunk: string) => void;
 
 /**
  * Function type for calling an LLM (Large Language Model).

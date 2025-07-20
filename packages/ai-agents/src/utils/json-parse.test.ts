@@ -356,6 +356,7 @@ describe("jsonParse", () => {
     it("should handle empty/minimal structures", () => {
       expect(jsonParse("{}")).toEqual({});
       expect(jsonParse("[]")).toEqual([]);
+      // biome-ignore lint/complexity/noBannedTypes: need to test with the exact value
       expect(jsonParse<{}>("{")).toEqual({});
       expect(jsonParse("}")).toBeUndefined(); // Single closing brace fails
       expect(jsonParse<[]>("[")).toEqual([]);

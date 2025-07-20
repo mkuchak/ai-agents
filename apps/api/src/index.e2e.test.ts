@@ -172,9 +172,6 @@ describe("Chat API E2E", () => {
           expect(streamedData).toContain('"isToolResult":true');
           expect(streamedData).toContain('"name":"calculator"');
 
-          // Extract and verify tool result
-          const lines = streamedData.split("\n");
-
           // Find tool result by searching through all content - now without newlines
           let toolResultLine = null;
 
@@ -447,9 +444,6 @@ describe("Chat API E2E", () => {
           // Should contain tool result JSON for weather tool
           expect(streamedData).toContain('"isToolResult":true');
           expect(streamedData).toContain('"name":"get_weather"');
-
-          // Extract and verify tool result
-          const lines = streamedData.split("\n");
 
           // Find tool result by searching through all content - now without newlines
           let toolResultLine = null;
