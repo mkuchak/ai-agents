@@ -31,8 +31,8 @@ app.post("/chat", async (req, res) => {
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Transfer-Encoding", "chunked");
 
-  const messages = await orchestratorAgent.run({
-    // await orchestratorAgent.run({
+  // const messages = await orchestratorAgent.run({
+  await orchestratorAgent.run({
     message: {
       role: "user",
       content: message,

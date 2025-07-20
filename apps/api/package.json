@@ -16,6 +16,7 @@
     "@repo/llm-prices": "workspace:*",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
+    "dedent": "^1.6.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "zod": "^4.0.5"
