@@ -73,6 +73,8 @@ export type Metadata = {
  * ```
  */
 export type Message = {
+  /** A optional unique identifier for the message */
+  id?: string;
   /** The role of the message sender ("user", "assistant", "system", "tool") */
   role: string;
   /** The text content of the message (optional for tool/system messages) */

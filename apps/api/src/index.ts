@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import cors from "cors";
 import { config } from "dotenv";
 import express from "express";
@@ -30,13 +31,14 @@ app.post("/chat", async (req, res) => {
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Transfer-Encoding", "chunked");
 
-  // const messages = await orchestratorAgent.run({
-  await orchestratorAgent.run({
+  const messages = await orchestratorAgent.run({
+    // await orchestratorAgent.run({
     message: {
       role: "user",
       content: message,
     },
     onMessage: (message) => {
+      message.id = randomUUID();
       console.log("Message:", JSON.stringify(message, null, 2));
       totalCost += message.metadata?.usage?.cost ?? 0;
     },
@@ -54,9 +56,9 @@ app.post("/chat", async (req, res) => {
 
   console.log("Total cost in BRL cents:", totalCostInBrlCents);
 
-  // res.write(
-  //   `\n\nMESSAGES:\n\n${JSON.stringify(messages, null, 2)}\n\nTotal cost in BRL cents: ${totalCostInBrlCents}`
-  // );
+  res.write(
+    `\n\nMESSAGES:\n\n${JSON.stringify(messages, null, 2)}\n\nTotal cost in BRL cents: ${totalCostInBrlCents}`
+  );
 
   res.end();
 });
