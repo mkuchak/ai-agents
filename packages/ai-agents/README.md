@@ -18,10 +18,10 @@ graph TB
         O[Orchestrator Agent<br/>🎯 Gatekeeper & Router]
         
         subgraph "Vertical Domains"
-            A1[Assistant Agent<br/>💬 General Tasks]
-            A2[Calculator Agent<br/>🔢 Math Operations]
-            A3[Weather Agent<br/>🌤️ Weather Data]
-            A4[Custom Agent<br/>⚡ Domain Specific]
+            A1[Agent A<br/>💼 Vertical Domain A]
+            A2[Agent B<br/>🔧 Vertical Domain B]
+            A3[Agent C<br/>📊 Vertical Domain C]
+            A4[Agent D<br/>⚡ Vertical Domain D]
         end
         
         U[User Input] --> O
@@ -46,26 +46,25 @@ sequenceDiagram
     participant U as User
     participant O as Orchestrator
     participant R as Agent Registry
-    participant A1 as Assistant Agent
-    participant A2 as Calculator Agent
+    participant A1 as Agent A
+    participant A2 as Agent B
     
-    U->>O: "What is 25 * 4 and what's the weather?"
+    U->>O: "Complex multi-domain request"
     O->>R: Find agent for task
-    R-->>O: Route to Assistant Agent
+    R-->>O: Route to Agent A
     O->>A1: Process request
     
-    Note over A1: Recognizes math task
-    A1->>R: Request handoff to Calculator
-    R-->>A1: Calculator Agent available
-    A1->>A2: Load skills from Calculator
-    A2->>A2: Execute calculation tool
-    A2-->>A1: Return result (100)
+    Note over A1: Recognizes specialized task
+    A1->>A1: Execute handoff tool
+    A1->>R: Request handoff to Agent B
+    R-->>A1: Agent B available
+    A1->>A2: Handoff and execute
+    A2->>A2: Execute specialized tool
+    A2-->>A1: Return result
     
-    Note over A1: Recognizes weather task  
-    A1->>R: Request handoff to Weather
-    R-->>A1: Weather Agent available
-    A1->>O: Complete response with both results
-    O-->>U: "25 * 4 = 100. Weather in..."
+    Note over A1: Continue processing with result
+    A1->>O: Complete response with results
+    O-->>U: "Comprehensive response with all results"
 ```
 
 ## 📋 Table of Contents
@@ -101,8 +100,11 @@ The package is organized with a clean separation between contracts and implement
 src/
 ├── contracts/           # Type definitions and interfaces
 │   ├── agent.ts             # Agent-related types and interfaces
-│   ├── orchestrator.ts       # Orchestrator-related types
-│   └── handoff.ts           # Handoff-related types and schemas
+│   ├── handoff.ts           # Handoff-related types and schemas
+│   ├── llm.ts               # LLM integration types and callbacks
+│   ├── message.ts           # Message and metadata types
+│   ├── orchestrator.ts      # Orchestrator context types
+│   └── tool.ts              # Tool definitions and execution types
 ├── impl/               # Implementation classes
 │   ├── agent.ts              # Agent class implementation
 │   ├── agent-orchestrator.ts    # Orchestrator class implementation
@@ -131,30 +133,49 @@ src/
 import { Agent } from '@repo/ai-agents';
 import { z } from 'zod';
 
-// Create an LLM adapter (example with Gemini)
-const callLlm = async (input: string) => {
+// Create an LLM adapter (example implementation)
+const callLlm = async (input: string, onStreamingChunk?: StreamingCallback) => {
   // Your LLM integration here
-  const response = await geminiClient.generate(input);
-  return { content: response.text };
+  const response = await llmClient.generate(input);
+  return { 
+    content: response.text,
+    usage: {
+      model: "your-model",
+      inputTokens: response.inputTokens,
+      outputTokens: response.outputTokens,
+      cost: response.cost
+    }
+  };
 };
 
 // Create a specialized agent
-const weatherAgent = new Agent(
-  "You are a weather specialist that provides accurate weather information.",
+const domainAgent = new Agent(
+  "You are a specialized agent for domain-specific tasks with expertise in your area.",
   callLlm,
-  { maxSteps: 10 }
+  { 
+    maxSteps: 10,
+    timeZone: "America/New_York",
+    locale: "en-US"
+  }
 );
 
 // Register a tool
-weatherAgent.registerTool({
-  name: "get_weather",
-  description: "Get current weather for a location",
+domainAgent.registerTool({
+  name: "process_data",
+  description: "Process domain-specific data",
   schema: z.object({
-    location: z.string().describe("City name or coordinates")
+    input: z.string().describe("Data to process"),
+    options: z.object({
+      format: z.enum(["json", "text"]).default("json")
+    }).optional()
   }),
   execute: async (input) => {
     // Tool implementation
-    return { temperature: "22°C", condition: "Sunny" };
+    return { 
+      processed: true, 
+      result: `Processed: ${input.input}`,
+      format: input.options?.format || "json"
+    };
   }
 });
 ```
@@ -164,22 +185,26 @@ weatherAgent.registerTool({
 ```typescript
 import { AgentOrchestrator } from '@repo/ai-agents';
 
-// Create orchestrator with gatekeeper
-const orchestrator = new AgentOrchestrator("assistant-agent");
+// Create orchestrator with gatekeeper agent
+const orchestrator = new AgentOrchestrator("agent-a", 15);
 
 // Register agents with capabilities
-orchestrator.registerAgent("assistant-agent", assistantAgent, ["general", "help"]);
-orchestrator.registerAgent("weather-agent", weatherAgent, ["weather", "climate"]);
-orchestrator.registerAgent("calculator-agent", calculatorAgent, ["math", "calculation"]);
+orchestrator.registerAgent("agent-a", agentA, ["general", "coordination", "routing"]);
+orchestrator.registerAgent("agent-b", agentB, ["data-processing", "analysis"]);
+orchestrator.registerAgent("agent-c", agentC, ["specialized-tasks", "computation"]);
 
-// Process user requests
-const response = await orchestrator.run({
+// Process user requests with streaming support
+const messages = await orchestrator.run({
   message: {
     role: "user",
-    content: "What's 25 * 4 and what's the weather in Paris?"
+    content: "Complex request requiring multiple specialized capabilities"
   },
-  onMessage: (msg) => console.log(msg),
-  onStreamingChunk: (chunk) => process.stdout.write(chunk)
+  onMessage: (msg) => console.log('Message:', msg),
+  onStreamingChunk: (chunk) => process.stdout.write(chunk),
+  onToolResult: (toolResult) => {
+    console.log(`Tool ${toolResult.name} executed:`, toolResult.output);
+  },
+  context: { userId: "user123", sessionId: "session456" }
 });
 ```
 
@@ -228,13 +253,15 @@ flowchart TD
     Gate --> |Route| Agent1[Primary Agent]
     Agent1 --> Reason[Reasoning Phase]
     
-    Reason --> Decision{Need Another<br/>Agent?}
+    Reason --> Decision{Need Specialized<br/>Skills?}
     Decision --> |No| Execute[Execute Tools]
-    Decision --> |Yes| Handoff[Request Handoff]
+    Decision --> |Yes| Handoff[Handoff Tool]
     
     Handoff --> Registry[(Agent Registry)]
-    Registry --> |Find Agent| Agent2[Target Agent]
-    Agent2 --> Reason
+    Registry --> |Find Specialist| Agent2[Specialist Agent]
+    Agent2 --> SpecExecute[Execute Specialized Tools]
+    SpecExecute --> ReturnResult[Return Results]
+    ReturnResult --> Agent1
     
     Execute --> Tools[Tool Execution]
     Tools --> Response[Generate Response]
@@ -246,6 +273,7 @@ flowchart TD
     style Gate fill:#e1f5fe
     style Registry fill:#f3e5f5
     style Tools fill:#e8f5e8
+    style Handoff fill:#fff3e0
 ```
 
 ### Agent Communication Protocol
@@ -269,6 +297,7 @@ sequenceDiagram
     box "Tool Layer"
         participant T1 as Tool 1
         participant T2 as Tool 2
+        participant HT as Handoff Tool
     end
 
     U->>O: User message
@@ -280,19 +309,21 @@ sequenceDiagram
     
     alt Agent can handle task
         A1->>T1: Execute tool
-        T1-->>A1: Tool result
-        A1-->>O: Final response
-    else Need different agent
-        A1->>R: Request handoff
-        R-->>A1: Target agent found
-        A1->>A2: Load skills from target
+        T1-->>A1: Tool result (streamed)
+        A1-->>O: Response with streaming
+    else Need specialized skills
+        A1->>HT: Execute handoff
+        HT->>R: Query for target agent
+        R-->>HT: Agent B available
+        HT-->>A1: Handoff successful
+        A1->>A2: Delegate to specialist
         A2->>T2: Execute specialized tool
-        T2-->>A2: Tool result
+        T2-->>A2: Tool result (streamed)
         A2-->>A1: Results
         A1-->>O: Combined response
     end
     
-    O-->>U: Final answer
+    O-->>U: Final answer with streaming
 ```
 
 ### Tool Execution Lifecycle
@@ -349,10 +380,17 @@ class Agent<C = unknown> implements AgentInterface<C> {
   registerTool<T extends z.ZodType>(tool: Tool<T, C>): void
   enableHandoff(): void
   disableHandoff(): void
-  run(params: RunParams): Promise<Message[]>
+  run(params: {
+    message?: Message;
+    history?: Message[];
+    onMessage?: OnMessage;
+    onStreamingChunk?: StreamingCallback;
+    onToolResult?: ToolResultStreamingCallback;
+    context?: C;
+  }): Promise<Message[]>
   
   // Properties
-  systemPrompt: string
+  systemPrompt: string // getter/setter for dynamic system prompt updates
 }
 ```
 
@@ -365,12 +403,20 @@ class AgentOrchestrator {
   // Agent management
   registerAgent(
     agentId: string, 
-    agent: AgentInterface, 
+    agent: AgentInterface<{ currentVerticalId?: string }>, 
     capabilities?: string[]
   ): void
   
   // Execution
-  run(params: OrchestratorRunParams): Promise<Message[]>
+  run(params: {
+    message: Message;
+    history?: Message[];
+    context?: OrchestratorContext;
+    onMessage?: OnMessage;
+    onStreamingChunk?: StreamingCallback;
+    onToolResult?: ToolResultStreamingCallback;
+    preferredAgentId?: string;
+  }): Promise<Message[]>
 }
 ```
 
@@ -389,6 +435,7 @@ interface Tool<T extends z.ZodType = z.ZodType, C = unknown> {
 
 ```typescript
 interface Message {
+  id?: string // Optional unique identifier
   role: string
   content?: string
   metadata?: Metadata
@@ -396,11 +443,70 @@ interface Message {
 }
 
 interface Metadata {
-  error?: ErrorInfo
-  reasoning?: ReasoningInfo
+  error?: {
+    message: string
+    prompt: string
+    response: string
+  }
+  reasoning?: {
+    thought?: string
+    isFinalAnswer?: boolean
+  }
   tool?: ToolMetadata
   usage?: TokenUsage
 }
+
+interface ToolMetadata {
+  name: string
+  input: SerializableValue | null
+  output: SerializableValue
+}
+
+interface TokenUsage {
+  model?: string
+  inputTokens?: number
+  outputTokens?: number
+  cost?: number
+}
+```
+
+### AgentRegistry Class
+
+```typescript
+class AgentRegistry {
+  // Singleton pattern
+  static getInstance(): AgentRegistry
+  
+  // Agent management
+  registerAgent<C = unknown>(
+    agentId: string,
+    agent: AgentInterface<C>,
+    capabilities?: string[]
+  ): void
+  
+  getAgent(agentId: string): ExtendedAgentInterface | undefined
+  getAllAgentIds(): string[]
+}
+
+interface ExtendedAgentInterface<C = unknown> extends AgentInterface<C> {
+  _id: string
+  _capabilities: string[]
+}
+```
+
+### Callback Types
+
+```typescript
+type OnMessage = (message: Message) => void | Promise<void>
+
+type StreamingCallback = (chunk: string) => void
+
+type ToolResultStreamingCallback = (toolResult: {
+  name: string
+  input: SerializableValue | null
+  output: SerializableValue
+  timestamp: Date
+}) => void
 ```
 
 ## 🔧 Tool Development
@@ -477,6 +583,132 @@ if (environment === 'production') {
 }
 ```
 
+## 🌊 Streaming & Real-time Features
+
+### Streaming Responses
+
+The system supports real-time streaming of both LLM responses and tool execution results:
+
+```typescript
+// Set up streaming handlers
+await agent.run({
+  message: userMessage,
+  onStreamingChunk: (chunk) => {
+    // Handle real-time LLM text streaming
+    process.stdout.write(chunk);
+    // Or send to client: websocket.send(chunk);
+  },
+  onToolResult: (toolResult) => {
+    // Handle real-time tool execution results
+    console.log(`Tool executed: ${toolResult.name}`);
+    // Stream structured data: websocket.send(JSON.stringify(toolResult));
+  },
+  onMessage: (message) => {
+    // Handle complete messages
+    console.log('Complete message:', message);
+  }
+});
+```
+
+### Tool Result Streaming
+
+Tool results are automatically streamed with structured metadata:
+
+```typescript
+// Tool result structure
+interface ToolResult {
+  name: string;                    // Tool name
+  input: SerializableValue | null; // Input parameters
+  output: SerializableValue;       // Execution result
+  timestamp: Date;                 // When execution completed
+}
+
+// Example tool result
+{
+  "name": "data_processor",
+  "input": { "query": "analyze sales data" },
+  "output": { "total": 15000, "trend": "increasing" },
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+### Integration with Web APIs
+
+```typescript
+// Express.js streaming endpoint
+app.post('/chat', async (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.setHeader('Transfer-Encoding', 'chunked');
+  
+  await orchestrator.run({
+    message: { role: "user", content: req.body.message },
+    onStreamingChunk: (chunk) => res.write(chunk),
+    onToolResult: (toolResult) => {
+      // Send tool results as structured data
+      res.write(JSON.stringify({ isToolResult: true, ...toolResult }));
+    }
+  });
+  
+  res.end();
+});
+```
+
+## 🔄 Agent Handoff System
+
+### Overview
+
+The handoff system enables agents to delegate tasks to other specialized agents seamlessly:
+
+```typescript
+// Agent automatically hands off tasks to another vertical
+// This happens internally via the handoff tool
+const agent = new Agent("You are a general agent", callLlm);
+agent.enableHandoff(); // Enable handoff capabilities
+
+// Register with orchestrator
+orchestrator.registerAgent("general", agent, ["general", "coordination"]);
+orchestrator.registerAgent("specialist", specialistAgent, ["specialized", "domain"]);
+```
+
+### Handoff Process
+
+1. **Recognition**: Agent recognizes task requires specialized capabilities
+2. **Tool Execution**: Agent executes `handoff` tool with target vertical ID
+3. **Delegation**: Task is handed off to the target agent
+4. **Execution**: Specialized tools are executed by the target agent
+5. **Return**: Results are integrated back into the conversation
+
+### Handoff Tool
+
+The system includes a built-in handoff tool:
+
+```typescript
+// Built-in handoff tool schema
+const handoffSchema = z.object({
+  targetVerticalId: z.string().describe(
+    "The ID of the vertical to handoff to. Must be a registered vertical in the registry."
+  )
+});
+
+// Usage is automatic - agents use this tool when needed
+// You don't need to register it manually
+```
+
+### Registry Management
+
+The `AgentRegistry` singleton manages all agents and their capabilities:
+
+```typescript
+import { AgentRegistry } from '@repo/ai-agents';
+
+const registry = AgentRegistry.getInstance();
+
+// Agents are automatically registered via orchestrator
+// Access registry information if needed
+const allAgentIds = registry.getAllAgentIds();
+const specificAgent = registry.getAgent("agent-id");
+```
+
 ## 🎯 Best Practices
 
 ### Agent Design
@@ -490,13 +722,13 @@ if (environment === 'production') {
 
 ```typescript
 // ✅ Good: Capability-based registration
-orchestrator.registerAgent("data-agent", dataAgent, [
-  "database", "analytics", "reporting", "sql"
+orchestrator.registerAgent("domain-specialist", domainAgent, [
+  "data-processing", "analysis", "reporting", "computation"
 ]);
 
 // ✅ Good: Descriptive agent IDs
-orchestrator.registerAgent("customer-support", supportAgent, [
-  "tickets", "escalation", "knowledge-base"
+orchestrator.registerAgent("workflow-coordinator", coordinatorAgent, [
+  "orchestration", "routing", "coordination", "management"
 ]);
 
 // ❌ Avoid: Generic capabilities
@@ -522,146 +754,170 @@ const safeAgent = new Agent(systemPrompt, async (input) => {
 
 ## 🧪 Examples
 
-### Example 1: Multi-Domain Business Assistant
+### Example 1: Multi-Domain Service System
 
 ```typescript
 import { AgentOrchestrator, Agent } from '@repo/ai-agents';
 
 // Create specialized agents
-const customerServiceAgent = new Agent(
-  "You handle customer inquiries, complaints, and support requests with empathy and efficiency.",
+const primaryAgent = new Agent(
+  "You are the primary coordinator that handles general inquiries and routes complex requests.",
   callLlm
 );
 
-const salesAgent = new Agent(
-  "You help with product information, pricing, and sales processes.",
+const domainAgentA = new Agent(
+  "You specialize in domain A operations with expertise in category A tasks.",
   callLlm
 );
 
-const technicalAgent = new Agent(
-  "You provide technical support and troubleshooting assistance.",
+const domainAgentB = new Agent(
+  "You specialize in domain B operations with expertise in category B tasks.",
   callLlm
 );
 
 // Set up orchestrator
-const businessOrchestrator = new AgentOrchestrator("customer-service");
+const serviceOrchestrator = new AgentOrchestrator("primary-agent");
 
-businessOrchestrator.registerAgent("customer-service", customerServiceAgent, [
-  "support", "complaints", "inquiries", "refunds"
+serviceOrchestrator.registerAgent("primary-agent", primaryAgent, [
+  "general", "coordination", "routing", "basic-queries"
 ]);
 
-businessOrchestrator.registerAgent("sales", salesAgent, [
-  "products", "pricing", "quotes", "orders"
+serviceOrchestrator.registerAgent("domain-a", domainAgentA, [
+  "category-a", "specialized-a", "analysis-a", "processing-a"
 ]);
 
-businessOrchestrator.registerAgent("technical", technicalAgent, [
-  "troubleshooting", "setup", "configuration", "bugs"
+serviceOrchestrator.registerAgent("domain-b", domainAgentB, [
+  "category-b", "specialized-b", "computation-b", "validation-b"
 ]);
 
-// Handle customer request
-const response = await businessOrchestrator.run({
+// Handle user request with streaming
+const messages = await serviceOrchestrator.run({
   message: {
     role: "user",
-    content: "I need help setting up the product I just bought"
-  }
+    content: "I need help with a complex task that requires specialized processing"
+  },
+  onStreamingChunk: (chunk) => process.stdout.write(chunk),
+  onToolResult: (result) => console.log('Tool executed:', result.name)
 });
 ```
 
-### Example 2: E-commerce Platform
+### Example 2: Data Processing Platform
 
 ```typescript
-// Product catalog agent
-const catalogAgent = new Agent(
-  "You manage product information, inventory, and catalog operations.",
+// Data ingestion agent
+const ingestionAgent = new Agent(
+  "You handle data ingestion, validation, and initial processing workflows.",
   callLlm
 );
 
-catalogAgent.registerTool({
-  name: "search_products",
-  description: "Search products by criteria",
+ingestionAgent.registerTool({
+  name: "process_dataset",
+  description: "Process and validate incoming datasets",
   schema: z.object({
-    query: z.string(),
-    category: z.string().optional(),
-    priceRange: z.object({
-      min: z.number(),
-      max: z.number()
+    source: z.string(),
+    format: z.enum(["csv", "json", "xml"]),
+    validationRules: z.object({
+      required: z.array(z.string()).optional(),
+      types: z.record(z.string()).optional()
     }).optional()
   }),
   execute: async (input) => {
-    return await productService.search(input);
+    return await dataService.process(input);
   }
 });
 
-// Order management agent  
-const orderAgent = new Agent(
-  "You handle order processing, tracking, and fulfillment.",
+// Analytics agent  
+const analyticsAgent = new Agent(
+  "You perform data analysis, generate insights, and create reports.",
   callLlm
 );
 
-orderAgent.registerTool({
-  name: "create_order",
-  description: "Create a new order",
+analyticsAgent.registerTool({
+  name: "analyze_data",
+  description: "Perform statistical analysis on processed data",
   schema: z.object({
-    customerId: z.string(),
-    items: z.array(z.object({
-      productId: z.string(),
-      quantity: z.number()
-    }))
+    datasetId: z.string(),
+    analysisType: z.enum(["descriptive", "predictive", "diagnostic"]),
+    parameters: z.object({
+      timeframe: z.string().optional(),
+      groupBy: z.array(z.string()).optional()
+    }).optional()
   }),
   execute: async (input) => {
-    return await orderService.create(input);
+    return await analyticsService.analyze(input);
   }
 });
 
-// Set up e-commerce orchestrator
-const ecommerceOrchestrator = new AgentOrchestrator("catalog");
-ecommerceOrchestrator.registerAgent("catalog", catalogAgent, ["products", "search", "inventory"]);
-ecommerceOrchestrator.registerAgent("orders", orderAgent, ["ordering", "checkout", "fulfillment"]);
+// Set up data platform orchestrator
+const dataOrchestrator = new AgentOrchestrator("ingestion");
+dataOrchestrator.registerAgent("ingestion", ingestionAgent, ["data-processing", "validation", "import"]);
+dataOrchestrator.registerAgent("analytics", analyticsAgent, ["analysis", "reporting", "insights"]);
 ```
 
-### Example 3: Content Management System
+### Example 3: Workflow Management System
 
 ```typescript
-const contentAgent = new Agent(
-  "You create, edit, and manage content across various formats and platforms.",
+const coordinatorAgent = new Agent(
+  "You coordinate workflows, manage task dependencies, and oversee process execution.",
   callLlm
 );
 
-const seoAgent = new Agent(
-  "You optimize content for search engines and analyze SEO metrics.",
+const processingAgent = new Agent(
+  "You execute data transformations, apply business logic, and handle computational tasks.",
   callLlm
 );
 
-const publishingAgent = new Agent(
-  "You handle content publishing, scheduling, and distribution.",
+const validationAgent = new Agent(
+  "You validate results, ensure quality standards, and perform compliance checks.",
   callLlm
 );
 
-// Content tools
-contentAgent.registerTool({
-  name: "generate_content",
-  description: "Generate content based on parameters",
+// Coordination tools
+coordinatorAgent.registerTool({
+  name: "create_workflow",
+  description: "Create and configure a new workflow",
   schema: z.object({
-    type: z.enum(['blog', 'social', 'email']),
-    topic: z.string(),
-    tone: z.enum(['professional', 'casual', 'friendly']),
-    length: z.number()
+    name: z.string(),
+    steps: z.array(z.object({
+      id: z.string(),
+      type: z.enum(['processing', 'validation', 'notification']),
+      dependencies: z.array(z.string()).optional()
+    })),
+    priority: z.enum(['low', 'medium', 'high']).default('medium')
   }),
   execute: async (input) => {
-    return await contentService.generate(input);
+    return await workflowService.create(input);
   }
 });
 
-// SEO tools  
-seoAgent.registerTool({
-  name: "analyze_seo",
-  description: "Analyze content for SEO optimization",
+// Processing tools  
+processingAgent.registerTool({
+  name: "execute_transformation",
+  description: "Execute data transformation operations",
   schema: z.object({
-    content: z.string(),
-    targetKeywords: z.array(z.string())
+    inputData: z.any(),
+    transformationType: z.enum(['filter', 'aggregate', 'format']),
+    parameters: z.record(z.any()).optional()
   }),
   execute: async (input) => {
-    return await seoService.analyze(input);
+    return await processingService.transform(input);
+  }
+});
+
+// Validation tools
+validationAgent.registerTool({
+  name: "validate_output",
+  description: "Validate processing results against quality criteria",
+  schema: z.object({
+    data: z.any(),
+    criteria: z.object({
+      completeness: z.boolean().default(true),
+      accuracy: z.number().min(0).max(1).default(0.95),
+      customRules: z.array(z.string()).optional()
+    })
+  }),
+  execute: async (input) => {
+    return await validationService.validate(input);
   }
 });
 ```
@@ -915,4 +1171,4 @@ The `@repo/ai-agents` package enables you to build sophisticated AI systems by:
 5. **Tool Integration**: Building extensible systems with custom tools and capabilities
 6. **Scalable Design**: Supporting complex multi-agent workflows and business processes
 
-This architecture allows you to build AI systems that can handle complex, multi-domain tasks while maintaining clean separation of concerns and easy extensibility.
+This architecture allows you to build sophisticated AI systems that can handle complex, multi-domain tasks through intelligent agent coordination, real-time streaming capabilities, and seamless skill sharing between specialized verticals while maintaining clean separation of concerns and easy extensibility.
