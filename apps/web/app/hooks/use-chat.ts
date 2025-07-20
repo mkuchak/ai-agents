@@ -1,13 +1,15 @@
 import { jsonrepair } from "jsonrepair";
 import { useCallback, useRef, useState } from "react";
 import type {
-  AgentReasoning,
   AgentStreamChunk,
   ChatActions,
   ChatState,
   Message,
-  ToolCall,
-  ToolResult,
+  ReasoningComponent,
+  ResponseComponent,
+  StreamComponent,
+  ToolComponent,
+  ToolResultComponent,
 } from "./types";
 
 interface UseChatOptions {
@@ -15,14 +17,18 @@ interface UseChatOptions {
 }
 
 interface UseChatReturn extends ChatState, ChatActions {
-  injectTestData: () => void; // Add test function
+  injectTestData: () => void;
 }
 
 const DEFAULT_API_URL = "http://localhost:3000/chat";
 
-function parseMultipleJsonObjects(text: string): AgentStreamChunk[] {
+function parseMultipleJsonObjects(text: string): {
+  parsed: AgentStreamChunk[];
+  remainingBuffer: string;
+} {
   const results: AgentStreamChunk[] = [];
   let buffer = text.trim();
+  let totalProcessed = 0;
 
   while (buffer.length > 0) {
     try {
@@ -31,6 +37,7 @@ function parseMultipleJsonObjects(text: string): AgentStreamChunk[] {
       let inString = false;
       let escapeNext = false;
       let endIndex = -1;
+      let foundStart = false;
 
       for (let i = 0; i < buffer.length; i++) {
         const char = buffer[i];
@@ -53,9 +60,10 @@ function parseMultipleJsonObjects(text: string): AgentStreamChunk[] {
         if (!inString) {
           if (char === "{") {
             braceCount++;
+            foundStart = true;
           } else if (char === "}") {
             braceCount--;
-            if (braceCount === 0) {
+            if (braceCount === 0 && foundStart) {
               endIndex = i + 1;
               break;
             }
@@ -64,7 +72,7 @@ function parseMultipleJsonObjects(text: string): AgentStreamChunk[] {
       }
 
       if (endIndex === -1) {
-        // No complete JSON object found
+        // No complete JSON object found, keep remaining buffer
         break;
       }
 
@@ -75,6 +83,7 @@ function parseMultipleJsonObjects(text: string): AgentStreamChunk[] {
         const parsed = JSON.parse(jsonStr);
         console.log("Successfully parsed:", parsed);
         results.push(parsed);
+        totalProcessed += endIndex;
       } catch (error) {
         console.log("Direct parse failed, trying jsonrepair:", error);
         try {
@@ -82,9 +91,11 @@ function parseMultipleJsonObjects(text: string): AgentStreamChunk[] {
           const parsed = JSON.parse(repaired);
           console.log("Successfully parsed after repair:", parsed);
           results.push(parsed);
+          totalProcessed += endIndex;
         } catch (repairError) {
-          console.log("Repair also failed:", repairError);
-          // Skip this object and continue
+          console.log("Repair also failed, skipping:", repairError);
+          // Skip this object and continue from the next character
+          totalProcessed += 1;
         }
       }
 
@@ -96,7 +107,10 @@ function parseMultipleJsonObjects(text: string): AgentStreamChunk[] {
     }
   }
 
-  return results;
+  return {
+    parsed: results,
+    remainingBuffer: text.substring(totalProcessed),
+  };
 }
 
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
@@ -117,45 +131,31 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     const mockMessage: Message = {
       id: `test-assistant-${Date.now()}`,
       role: "assistant",
-      content: "",
+      content: "25 multiplied by 4 is 100.",
       timestamp: new Date(),
       isStreaming: false,
-      reasoning: [
+      componentStream: [
         {
-          id: "r1",
+          id: "comp-1",
+          type: "reasoning",
           thought:
             "The user is asking a mathematical question. The current vertical `assistant` does not have the capability to perform calculations. I need to load skills from the `mathematician` vertical to perform this calculation.",
           timestamp: new Date(),
           isStreaming: false,
-        },
+        } as ReasoningComponent,
         {
-          id: "r2",
-          thought:
-            "The user asked a mathematical question. I have successfully loaded the skills from the 'mathematician' vertical. Now I need to use the 'calculator' tool to evaluate the expression '25 * 4'.",
-          timestamp: new Date(),
-          isStreaming: false,
-        },
-      ],
-      toolCalls: [
-        {
-          id: "tc1",
+          id: "comp-2",
+          type: "tool",
           name: "load_skills_from",
           input: { targetVerticalId: "mathematician" },
           timestamp: new Date(),
           status: "completed",
-        },
+          isStreaming: false,
+        } as ToolComponent,
         {
-          id: "tc2",
-          name: "calculator",
-          input: { expression: "25 * 4" },
-          timestamp: new Date(),
-          status: "completed",
-        },
-      ],
-      toolResults: [
-        {
-          id: "tr1",
-          toolCallId: "tc1",
+          id: "comp-3",
+          type: "tool_result",
+          toolId: "comp-2",
           name: "load_skills_from",
           input: { targetVerticalId: "mathematician" },
           output: {
@@ -163,10 +163,29 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
             message: "Successfully loaded skills from mathematician.",
           },
           timestamp: new Date(),
-        },
+          isStreaming: false,
+        } as ToolResultComponent,
         {
-          id: "tr2",
-          toolCallId: "tc2",
+          id: "comp-4",
+          type: "reasoning",
+          thought:
+            "The user asked a mathematical question. I have successfully loaded the skills from the 'mathematician' vertical. Now I need to use the 'calculator' tool to evaluate the expression '25 * 4'.",
+          timestamp: new Date(),
+          isStreaming: false,
+        } as ReasoningComponent,
+        {
+          id: "comp-5",
+          type: "tool",
+          name: "calculator",
+          input: { expression: "25 * 4" },
+          timestamp: new Date(),
+          status: "completed",
+          isStreaming: false,
+        } as ToolComponent,
+        {
+          id: "comp-6",
+          type: "tool_result",
+          toolId: "comp-5",
           name: "calculator",
           input: { expression: "25 * 4" },
           output: {
@@ -175,9 +194,24 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
             formatted_result: "100",
           },
           timestamp: new Date(),
-        },
+          isStreaming: false,
+        } as ToolResultComponent,
+        {
+          id: "comp-7",
+          type: "reasoning",
+          thought:
+            "The user asked for the result of '25 * 4'. I used the 'calculator' tool and obtained the result, which is 100. All tasks have been completed.",
+          timestamp: new Date(),
+          isStreaming: false,
+        } as ReasoningComponent,
+        {
+          id: "comp-8",
+          type: "response",
+          response: "25 multiplied by 4 is 100.",
+          timestamp: new Date(),
+          isStreaming: false,
+        } as ResponseComponent,
       ],
-      finalResponse: "25 multiplied by 4 is 100.",
     };
 
     console.log("Injecting test data:", { userMessage, mockMessage });
@@ -201,9 +235,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         content: "",
         timestamp: new Date(),
         isStreaming: true,
-        reasoning: [],
-        toolCalls: [],
-        toolResults: [],
+        componentStream: [],
       };
 
       console.log("Created assistant message:", assistantMessage);
@@ -245,12 +277,13 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
           console.log("Current buffer:", buffer);
 
           // Parse multiple JSON objects from the buffer
-          const parsedChunks = parseMultipleJsonObjects(buffer);
+          const { parsed: parsedChunks, remainingBuffer } =
+            parseMultipleJsonObjects(buffer);
+
+          // Update buffer to only keep unparsed content
+          buffer = remainingBuffer;
 
           if (parsedChunks.length > 0) {
-            // Clear the buffer since we successfully parsed something
-            buffer = "";
-
             for (const parsed of parsedChunks) {
               console.log("Processing parsed chunk:", parsed);
 
@@ -259,9 +292,9 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                   if (msg.id !== assistantMessage.id) return msg;
 
                   const updatedMsg = { ...msg };
-                  console.log("Updating message with:", parsed);
+                  const currentStream = [...(updatedMsg.componentStream || [])];
 
-                  // Handle tool results
+                  // Handle tool results - these update existing tool components
                   if (
                     parsed.isToolResult &&
                     parsed.name &&
@@ -269,61 +302,83 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                     parsed.output
                   ) {
                     console.log("Adding tool result:", parsed);
-                    const toolResult: ToolResult = {
-                      id: Date.now().toString(),
-                      toolCallId: `${parsed.name}-${Date.now()}`,
+
+                    // Find the most recent tool component with the same name
+                    let toolIndex = -1;
+                    for (let i = currentStream.length - 1; i >= 0; i--) {
+                      const comp = currentStream[i];
+                      if (
+                        comp &&
+                        comp.type === "tool" &&
+                        (comp as ToolComponent).name === parsed.name
+                      ) {
+                        toolIndex = i;
+                        break;
+                      }
+                    }
+
+                    if (toolIndex !== -1 && currentStream[toolIndex]) {
+                      // Update the tool status to completed
+                      const toolComp = currentStream[
+                        toolIndex
+                      ] as ToolComponent;
+                      const updatedTool: ToolComponent = {
+                        ...toolComp,
+                        status: "completed",
+                        isStreaming: false,
+                      };
+                      currentStream[toolIndex] = updatedTool;
+                    }
+
+                    // Add the tool result as a new component
+                    const toolResult: ToolResultComponent = {
+                      id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                      type: "tool_result",
+                      toolId:
+                        toolIndex !== -1 && currentStream[toolIndex]
+                          ? currentStream[toolIndex]!.id
+                          : "",
                       name: parsed.name,
                       input: parsed.input,
                       output: parsed.output,
                       timestamp: parsed.timestamp
                         ? new Date(parsed.timestamp)
                         : new Date(),
+                      isStreaming: false,
                     };
 
-                    updatedMsg.toolResults = [
-                      ...(updatedMsg.toolResults || []),
-                      toolResult,
-                    ];
-
-                    // Update corresponding tool call status
-                    updatedMsg.toolCalls = (updatedMsg.toolCalls || []).map(
-                      (call) =>
-                        call.name === parsed.name
-                          ? { ...call, status: "completed" as const }
-                          : call
-                    );
+                    currentStream.push(toolResult);
                   }
                   // Handle thoughts/reasoning
                   else if (parsed.thought) {
                     console.log("Adding reasoning:", parsed.thought);
-                    const reasoning: AgentReasoning = {
-                      id: Date.now().toString(),
+
+                    const reasoning: ReasoningComponent = {
+                      id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                      type: "reasoning",
                       thought: parsed.thought,
                       timestamp: new Date(),
                       isStreaming: !parsed.is_final_answer,
                     };
 
-                    updatedMsg.reasoning = [
-                      ...(updatedMsg.reasoning || []),
-                      reasoning,
-                    ];
+                    currentStream.push(reasoning);
                   }
 
                   // Handle tool calls/actions
                   if (parsed.action?.tool_name) {
                     console.log("Adding tool call:", parsed.action);
-                    const toolCall: ToolCall = {
-                      id: Date.now().toString(),
+
+                    const toolCall: ToolComponent = {
+                      id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                      type: "tool",
                       name: parsed.action.tool_name,
                       input: parsed.action.tool_input,
                       timestamp: new Date(),
                       status: "running",
+                      isStreaming: false,
                     };
 
-                    updatedMsg.toolCalls = [
-                      ...(updatedMsg.toolCalls || []),
-                      toolCall,
-                    ];
+                    currentStream.push(toolCall);
                   }
 
                   // Handle final response
@@ -332,7 +387,16 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                       "Adding final response:",
                       parsed.response_to_user
                     );
-                    updatedMsg.finalResponse = parsed.response_to_user;
+
+                    const response: ResponseComponent = {
+                      id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                      type: "response",
+                      response: parsed.response_to_user,
+                      timestamp: new Date(),
+                      isStreaming: !parsed.is_final_answer,
+                    };
+
+                    currentStream.push(response);
                     updatedMsg.content = parsed.response_to_user;
                   }
 
@@ -340,8 +404,17 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                   if (parsed.is_final_answer) {
                     console.log("Marking as final answer");
                     updatedMsg.isStreaming = false;
+
+                    // Mark all streaming components as complete
+                    currentStream.forEach((comp, index) => {
+                      if (comp && comp.isStreaming) {
+                        const updatedComp = { ...comp, isStreaming: false };
+                        currentStream[index] = updatedComp;
+                      }
+                    });
                   }
 
+                  updatedMsg.componentStream = currentStream;
                   console.log("Updated message:", updatedMsg);
                   return updatedMsg;
                 })
@@ -360,14 +433,12 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         );
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
-          // Request was aborted
           console.log("Request aborted");
           return;
         }
 
         console.error("Error sending message:", error);
 
-        // Update with error message
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessage.id
@@ -393,7 +464,6 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       abortControllerRef.current.abort();
       setIsLoading(false);
 
-      // Mark current streaming message as complete
       setMessages((prev) =>
         prev.map((msg) =>
           msg.isStreaming ? { ...msg, isStreaming: false } : msg
