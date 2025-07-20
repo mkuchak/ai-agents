@@ -16,16 +16,18 @@ export async function geminiCallLlm(
   onStreamingChunk?: StreamingCallback
 ): Promise<CallLlmResponse> {
   // Just select the first model from the list
+  const activeThinking = false;
   const [model] = [
+    "gemini-2.5-flash", // reasonable price, very good performance
+    "gemini-2.5-pro", // bad price, best performance (active thinking is obligatory)
     "gemini-2.0-flash", // good price, good performance
     "gemini-2.5-flash-lite-preview-06-17", // good price, good performance but unstable yet
-    "gemini-2.5-flash", // reasonable price, very good performance
     "gemini-2.0-flash-lite", // awesome price, bad performance
   ];
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const config: GenerateContentConfig = {
     thinkingConfig: {
-      thinkingBudget: 0,
+      thinkingBudget: activeThinking ? -1 : 0,
     },
     responseMimeType: "application/json",
     responseSchema: {
