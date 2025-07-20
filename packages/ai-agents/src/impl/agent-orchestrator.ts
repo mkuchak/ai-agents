@@ -4,16 +4,10 @@ import type {
   Message,
   OnMessage,
   StreamingCallback,
-} from "./agent";
+} from "../contracts/agent";
+import type { OrchestratorContext } from "../contracts/orchestrator";
 import { AgentRegistry } from "./agent-registry";
 import { handoffTool } from "./handoff-tool";
-
-/**
- * Interface defining context for the agent orchestrator
- */
-export interface OrchestratorContext {
-  [key: string]: unknown;
-}
 
 /**
  * AgentOrchestrator handles the coordination of multiple agents,

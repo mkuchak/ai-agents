@@ -1,4 +1,7 @@
-import type { AgentInterface, ExtendedAgentInterface } from "./agent";
+import type {
+  AgentInterface,
+  ExtendedAgentInterface,
+} from "../contracts/agent";
 
 /**
  * AgentRegistry provides a centralized registry for all agents in the system

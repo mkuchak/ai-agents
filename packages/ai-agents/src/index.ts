@@ -1,11 +1,7 @@
-// Interfaces
-export type {
-  AgentInterface,
-  ExtendedAgentInterface,
-  SerializableValue,
-  StreamingCallback,
-  ToolMetadata,
-} from "./impl/agent";
+// Contracts (types and interfaces)
+export * from "./contracts/agent";
+export * from "./contracts/handoff";
+export * from "./contracts/orchestrator";
 
 // Implementation
 export * from "./impl/agent";

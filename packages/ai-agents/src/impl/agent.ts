@@ -1,5 +1,15 @@
 import dedent from "dedent";
 import * as z from "zod";
+import type {
+  AgentInterface,
+  CallLlm,
+  LlmResponseFormat,
+  Message,
+  OnMessage,
+  SerializableValue,
+  StreamingCallback,
+  Tool,
+} from "../contracts/agent";
 import {
   formatDateTime,
   type Locale,
@@ -12,110 +22,6 @@ import { jsonParse } from "../utils/json-parse";
 const DEFAULT_TIMEZONE: TimeZone = "America/New_York";
 const DEFAULT_LOCALE: Locale = "en-US";
 const DEFAULT_MAX_STEPS = 20;
-
-export const llmResponseFormatSchema = z.object({
-  thought: z
-    .string()
-    .describe("Analysis and reasoning about the current situation"),
-  response_to_user: z
-    .string()
-    .optional()
-    .describe("Optional response to show to the user"),
-  action: z
-    .object({
-      tool_name: z.string().describe("Name of the tool to use"),
-      tool_input: z.any().describe("Input parameters for the tool"),
-    })
-    .optional(),
-  is_final_answer: z
-    .boolean()
-    .describe("Whether this is the final response or needs more steps"),
-});
-
-export type LlmResponseFormat = z.infer<typeof llmResponseFormatSchema>;
-
-export type TokenUsage = {
-  model?: string;
-  inputTokens?: number;
-  outputTokens?: number;
-  cost?: number;
-};
-
-// Interface for tool input/output that can be serialized
-export interface SerializableValue {
-  [key: string]: unknown;
-}
-
-// Interface for tool metadata with proper typing
-export interface ToolMetadata {
-  name: string;
-  input: SerializableValue | null;
-  output: SerializableValue;
-}
-
-export type Metadata = {
-  error?: {
-    message: string;
-    prompt: string;
-    response: string;
-  };
-  reasoning?: {
-    thought?: string;
-    isFinalAnswer?: boolean;
-  };
-  tool?: ToolMetadata;
-  usage?: TokenUsage;
-};
-
-export type Message = {
-  role: string;
-  content?: string;
-  metadata?: Metadata;
-  timestamp?: Date;
-};
-
-export type Tool<T extends z.ZodType = z.ZodType, C = unknown> = {
-  name: string;
-  description: string;
-  schema: T;
-  execute: (input: z.infer<T>, context?: C) => Promise<unknown>;
-};
-
-export type CallLlmResponse = {
-  content: string;
-  usage?: TokenUsage;
-};
-
-// Type for the streaming callback function
-export type StreamingCallback = (chunk: string) => void;
-
-export type CallLlm = (
-  input: string,
-  onStreamingChunk?: StreamingCallback
-) => Promise<CallLlmResponse> | undefined;
-
-export type OnMessage = (message: Message) => void | Promise<void>;
-
-// Interface for agents that can be managed by the registry and orchestrator
-export interface AgentInterface<C = unknown> {
-  systemPrompt: string;
-  enableHandoff(): void;
-  disableHandoff(): void;
-  registerTool<T extends z.ZodType>(tool: Tool<T, C>): void;
-  run(params: {
-    message?: Message;
-    history?: Message[];
-    onMessage?: OnMessage;
-    onStreamingChunk?: StreamingCallback;
-    context?: C;
-  }): Promise<Message[]>;
-}
-
-// Extended interface for registry management
-export interface ExtendedAgentInterface<C = unknown> extends AgentInterface<C> {
-  _id: string;
-  _capabilities: string[];
-}
 
 export class Agent<C = unknown> implements AgentInterface<C> {
   private tools: Map<string, Tool<z.ZodType, C>> = new Map();
