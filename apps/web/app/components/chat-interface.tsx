@@ -52,7 +52,7 @@ export function ChatInterface() {
                 <div className="flex flex-wrap justify-center gap-2">
                   {[
                     "What is 25 * 4?",
-                    "What's the weather in Paris?",
+                    "What's the capital of France and its weather?",
                     "Explain quantum computing",
                   ].map((example) => (
                     <button
