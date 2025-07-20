@@ -26,8 +26,6 @@ calculatorAgent.registerTool({
       .describe("The mathematical expression to evaluate in JavaScript syntax"),
   }),
   execute: async (input) => {
-    console.log("calculator input:", JSON.stringify(input, null, 2));
-
     try {
       // Basic security: only allow mathematical expressions
       const sanitizedExpression = input.expression.trim();

@@ -40,6 +40,32 @@ export interface ToolMetadata {
 }
 
 /**
+ * Callback function type for handling tool execution results in streaming mode.
+ * Called immediately after a tool execution completes with the complete result.
+ *
+ * @param toolResult - Complete tool execution result with metadata
+ *
+ * @example
+ * ```typescript
+ * const toolResultHandler: ToolResultStreamingCallback = (toolResult) => {
+ *   console.log(`Tool ${toolResult.name} executed:`, toolResult.output);
+ *   // Stream the result to the client
+ *   streamToClient(JSON.stringify({ isToolResult: true, ...toolResult }));
+ * };
+ * ```
+ */
+export type ToolResultStreamingCallback = (toolResult: {
+  /** The name of the tool that was executed */
+  name: string;
+  /** The input parameters passed to the tool (null if no input required) */
+  input: SerializableValue | null;
+  /** The result returned by the tool execution */
+  output: SerializableValue;
+  /** When the tool execution completed */
+  timestamp: Date;
+}) => void;
+
+/**
  * Definition of a tool that can be executed by an agent.
  * Tools provide specific capabilities like calculations, API calls, or data processing.
  *

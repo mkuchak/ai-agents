@@ -108,7 +108,7 @@ Sends a message to the AI agent system and receives a streaming response.
 - **Transfer-Encoding**: `chunked` (streaming)
 - **Status**: `200 OK`
 
-**Response Body**: Streaming text response from the appropriate AI agent.
+**Response Body**: Streaming text response with real-time tool execution results.
 
 **Example Request:**
 
@@ -123,12 +123,107 @@ curl -X POST http://localhost:3000/chat \
 ```text
 I'll help you calculate 15 * 23 + 100.
 
-Let me compute this step by step:
+{"isToolResult":true,"name":"calculator","input":{"expression":"15 * 23 + 100"},"output":{"result":445},"timestamp":"2024-01-01T12:00:00.000Z"}
 
-15 * 23 = 345
-345 + 100 = 445
+The calculation result is 445.
+```
 
-The answer is 445.
+## Real-time Tool Results
+
+The API automatically streams tool execution results in real-time, giving you visibility into what tools are being used and their outputs.
+
+### How It Works
+
+When agents execute tools (calculations, weather lookups, etc.), their results are streamed immediately as JSON objects with an `isToolResult` flag:
+
+```json
+{"isToolResult":true,"name":"calculator","input":{"expression":"25*4"},"output":{"result":100},"timestamp":"2024-01-01T12:00:00.000Z"}
+```
+
+### Tool Result Structure
+
+- `isToolResult`: Always `true` for tool results (to distinguish from text)
+- `name`: The tool that was executed
+- `input`: Parameters passed to the tool 
+- `output`: Result returned by the tool
+- `timestamp`: When execution completed
+
+### Example Response Flow
+
+```text
+I'll help you with those calculations.
+
+{"isToolResult":true,"name":"calculator","input":{"expression":"25*4"},"output":{"result":100},"timestamp":"..."}
+
+The calculation gives us 100. Now checking the weather.
+
+{"isToolResult":true,"name":"get_weather","input":{"location":"Paris"},"output":{"temperature":"22°C","condition":"Sunny"},"timestamp":"..."}
+
+The weather in Paris is 22°C and sunny.
+```
+
+### Parsing Tool Results
+
+**JavaScript:**
+```javascript
+const response = await fetch('/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message: 'Calculate 50 * 2' })
+});
+
+const reader = response.body.getReader();
+let buffer = '';
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  buffer += new TextDecoder().decode(value);
+  
+  // Parse each line as JSON to check for tool results
+  const lines = buffer.split('\n');
+  lines.forEach(line => {
+    if (line.trim()) {
+      try {
+        const parsed = JSON.parse(line);
+        if (parsed.isToolResult) {
+          console.log('Tool:', parsed.name, 'Result:', parsed.output);
+        }
+      } catch (e) {
+        // Not JSON, just regular text
+      }
+    }
+  });
+}
+```
+
+**Python:**
+```python
+import requests
+import json
+
+response = requests.post('http://localhost:3000/chat', 
+  json={'message': 'Calculate 50 * 2'}, 
+  stream=True
+)
+
+buffer = ''
+for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
+  if chunk:
+    buffer += chunk
+    
+    # Parse each line as JSON to check for tool results
+    lines = buffer.split('\n')
+    for line in lines:
+      if line.strip():
+        try:
+          parsed = json.loads(line)
+          if parsed.get('isToolResult'):
+            print(f"Tool: {parsed['name']}, Result: {parsed['output']}")
+        except json.JSONDecodeError:
+          # Not JSON, just regular text
+          pass
 ```
 
 ## Agent System

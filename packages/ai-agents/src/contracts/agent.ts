@@ -1,7 +1,7 @@
 import type * as z from "zod";
 import type { StreamingCallback } from "./llm";
 import type { Message, OnMessage } from "./message";
-import type { Tool } from "./tool";
+import type { Tool, ToolResultStreamingCallback } from "./tool";
 
 /**
  * Core interface that all AI agents must implement.
@@ -56,6 +56,8 @@ export interface AgentInterface<C = unknown> {
     onMessage?: OnMessage;
     /** Callback for handling streaming responses */
     onStreamingChunk?: StreamingCallback;
+    /** Callback for handling tool execution results in streaming mode */
+    onToolResult?: ToolResultStreamingCallback;
     /** Context data to pass to tools and execution logic */
     context?: C;
   }): Promise<Message[]>;

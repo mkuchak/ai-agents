@@ -3,6 +3,7 @@ import type { AgentInterface } from "../contracts/agent";
 import type { StreamingCallback } from "../contracts/llm";
 import type { Message, OnMessage } from "../contracts/message";
 import type { OrchestratorContext } from "../contracts/orchestrator";
+import type { ToolResultStreamingCallback } from "../contracts/tool";
 import { AgentRegistry } from "./agent-registry";
 import { handoffTool } from "./handoff-tool";
 
@@ -116,6 +117,7 @@ export class AgentOrchestrator {
    * @param params.history Previous conversation history
    * @param params.context Context information including account ID
    * @param params.onMessage Callback for processing messages
+   * @param params.onToolResult Callback for handling tool execution results
    * @param params.preferredAgentId Optional agent ID to use instead of gatekeeper
    * @returns All messages generated during processing
    */
@@ -125,6 +127,7 @@ export class AgentOrchestrator {
     context = {},
     onMessage,
     onStreamingChunk,
+    onToolResult,
     preferredAgentId,
   }: {
     message: Message;
@@ -132,6 +135,7 @@ export class AgentOrchestrator {
     context?: OrchestratorContext;
     onMessage?: OnMessage;
     onStreamingChunk?: StreamingCallback;
+    onToolResult?: ToolResultStreamingCallback;
     preferredAgentId?: string;
   }): Promise<Message[]> {
     // Create a new sequence for each execution
@@ -146,6 +150,7 @@ export class AgentOrchestrator {
       context,
       onMessage,
       onStreamingChunk,
+      onToolResult,
       steps: 0,
       handoffSequence, // Pass the sequence as a parameter
     });
@@ -159,6 +164,7 @@ export class AgentOrchestrator {
    * @param history Conversation history
    * @param context Context information
    * @param onMessage Callback for processing messages
+   * @param onToolResult Callback for handling tool execution results
    * @param steps Current number of steps taken
    * @param handoffSequence Current handoff sequence
    * @returns All messages generated during processing
@@ -170,6 +176,7 @@ export class AgentOrchestrator {
     context,
     onMessage,
     onStreamingChunk,
+    onToolResult,
     steps,
     handoffSequence,
   }: {
@@ -179,6 +186,7 @@ export class AgentOrchestrator {
     context: OrchestratorContext;
     onMessage?: OnMessage;
     onStreamingChunk?: StreamingCallback;
+    onToolResult?: ToolResultStreamingCallback;
     steps: number;
     handoffSequence: string[];
   }): Promise<Message[]> {
@@ -237,6 +245,7 @@ export class AgentOrchestrator {
         context,
         onMessage: wrappedOnMessage,
         onStreamingChunk,
+        onToolResult,
       });
 
       // Check if skills loading was requested
@@ -289,6 +298,7 @@ export class AgentOrchestrator {
           context,
           onMessage,
           onStreamingChunk,
+          onToolResult,
           steps: steps + 1,
           handoffSequence,
         });

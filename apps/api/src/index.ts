@@ -30,26 +30,34 @@ app.post("/chat", async (req, res) => {
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Transfer-Encoding", "chunked");
 
+  // const messages = await orchestratorAgent.run({
   await orchestratorAgent.run({
     message: {
       role: "user",
-      // content: "What is the capital of France and what is the weather there?",
-      // content: "What is 1 + 1?",
       content: message,
     },
     onMessage: (message) => {
       console.log("Message:", JSON.stringify(message, null, 2));
       totalCost += message.metadata?.usage?.cost ?? 0;
     },
-    onStreamingChunk: (chunk) => {
+    onStreamingChunk: (chunk, metadata) => {
+      console.log("Metadata:", JSON.stringify(metadata, null, 2));
       res.write(chunk);
+    },
+    onToolResult: (toolResult) => {
+      res.write(JSON.stringify({ isToolResult: true, ...toolResult }));
     },
   });
 
-  console.log(
-    "Total cost in BRL cents:",
-    Number((totalCost * USD_TO_BRL_RATE * 100).toFixed(2))
+  const totalCostInBrlCents = Number(
+    (totalCost * USD_TO_BRL_RATE * 100).toFixed(2)
   );
+
+  console.log("Total cost in BRL cents:", totalCostInBrlCents);
+
+  // res.write(
+  //   `\n\nMESSAGES:\n\n${JSON.stringify(messages, null, 2)}\n\nTotal cost in BRL cents: ${totalCostInBrlCents}`
+  // );
 
   res.end();
 });

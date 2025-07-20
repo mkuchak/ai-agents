@@ -709,10 +709,14 @@ contextAwareAgent.registerTool({
 const streamingAgent = new Agent(systemPrompt, callLlm);
 
 await streamingAgent.run({
-  message: { role: "user", content: "Tell me a story" },
+  message: { role: "user", content: "Calculate 25 * 4 and tell me a story" },
   onStreamingChunk: (chunk) => {
-    // Handle real-time streaming
+    // Handle real-time LLM text streaming
     process.stdout.write(chunk);
+  },
+  onToolResult: (toolResult) => {
+    // Handle real-time tool execution results
+    console.log(`Tool executed: ${toolResult.name}`, toolResult.output);
   },
   onMessage: (message) => {
     // Handle complete messages
@@ -772,6 +776,10 @@ app.post('/chat', async (req, res) => {
   await orchestrator.run({
     message: { role: "user", content: message },
     onStreamingChunk: (chunk) => res.write(chunk),
+    onToolResult: (toolResult) => {
+      // Stream tool results as JSON with isToolResult flag
+      res.write(JSON.stringify({ isToolResult: true, ...toolResult }));
+    },
     onMessage: (msg) => console.log('Message processed:', msg)
   });
   

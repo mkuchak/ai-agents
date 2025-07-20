@@ -7,7 +7,11 @@ import type {
   StreamingCallback,
 } from "../contracts/llm";
 import type { Message, OnMessage } from "../contracts/message";
-import type { SerializableValue, Tool } from "../contracts/tool";
+import type {
+  SerializableValue,
+  Tool,
+  ToolResultStreamingCallback,
+} from "../contracts/tool";
 import {
   formatDateTime,
   type Locale,
@@ -360,7 +364,8 @@ export class Agent<C = unknown> implements AgentInterface<C> {
   private async executeTool(
     toolName: string,
     toolInput: string,
-    context?: C
+    context?: C,
+    onToolResult?: ToolResultStreamingCallback
   ): Promise<string> {
     const tool = this.tools.get(toolName);
     if (!tool) {
@@ -375,6 +380,16 @@ export class Agent<C = unknown> implements AgentInterface<C> {
 
       const validatedInput = tool.schema.parse(parsedInput);
       const result = await tool.execute(validatedInput, context as C);
+
+      // Stream tool result if callback is provided
+      if (onToolResult) {
+        onToolResult({
+          name: toolName,
+          input: parsedInput as SerializableValue,
+          output: result as SerializableValue,
+          timestamp: new Date(),
+        });
+      }
 
       return JSON.stringify(result);
     } catch (error: unknown) {
@@ -402,12 +417,14 @@ export class Agent<C = unknown> implements AgentInterface<C> {
     history = [],
     onMessage,
     onStreamingChunk,
+    onToolResult,
     context,
   }: {
     message?: Message;
     history?: Message[];
     onMessage?: OnMessage;
     onStreamingChunk?: StreamingCallback;
+    onToolResult?: ToolResultStreamingCallback;
     context?: C;
   }): Promise<Message[]> {
     const messages: Message[] = [];
@@ -515,7 +532,8 @@ export class Agent<C = unknown> implements AgentInterface<C> {
       const toolOutput = await this.executeTool(
         parsed.action.tool,
         parsed.action.input,
-        context
+        context,
+        onToolResult
       );
 
       // Check if this was a skills loading tool call

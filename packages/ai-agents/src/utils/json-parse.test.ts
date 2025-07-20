@@ -436,7 +436,8 @@ describe("jsonParse", () => {
       expect(result).toEqual({
         zero: 0,
         negative: -42,
-        float: Math.PI,
+        // biome-ignore lint/suspicious/noApproximativeNumericConstant: need to test with the exact value
+        float: 3.14159,
         scientific: 1.23e-4,
       });
     });
