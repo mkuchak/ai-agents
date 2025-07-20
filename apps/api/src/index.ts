@@ -56,9 +56,9 @@ app.post("/chat", async (req, res) => {
 
   console.log("Total cost in BRL cents:", totalCostInBrlCents);
 
-  res.write(
-    `\n\nMESSAGES:\n\n${JSON.stringify(messages, null, 2)}\n\nTotal cost in BRL cents: ${totalCostInBrlCents}`
-  );
+  // res.write(
+  //   `\n\nMESSAGES:\n\n${JSON.stringify(messages, null, 2)}\n\nTotal cost in BRL cents: ${totalCostInBrlCents}`
+  // );
 
   res.end();
 });
