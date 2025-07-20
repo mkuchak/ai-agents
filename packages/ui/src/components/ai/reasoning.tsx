@@ -1,12 +1,12 @@
 "use client";
 
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import { AIResponse } from "@repo/ui/components/ai/response";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@repo/ui/components/collapsible";
-import { AIResponse } from "@repo/ui/components/ui/kibo-ui/ai/response";
 import { cn } from "@repo/ui/lib/utils";
 import { ChevronDownIcon } from "lucide-react";
 import type { ComponentProps } from "react";
