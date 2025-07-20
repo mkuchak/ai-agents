@@ -1,3 +1,4 @@
+import { Button } from "@repo/ui/components/button";
 import { useAutoScroll, useChat } from "../hooks";
 import { ChatHeader } from "./chat-header";
 import { MessageBubble } from "./message-bubble";
@@ -15,6 +16,14 @@ export function ChatInterface() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto px-4 py-6">
           <div className="mx-auto max-w-4xl space-y-6">
+            <Button
+              variant="destructive"
+              onClick={() => {
+                alert("clicked");
+              }}
+            >
+              Click me
+            </Button>
             {messages.length === 0 ? (
               <div className="py-12 text-center">
                 <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
