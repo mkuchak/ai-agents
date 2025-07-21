@@ -28,7 +28,7 @@ export function ChatHeader({ onClearChat }: ChatHeaderProps) {
               AI Agents Chat
             </h1>
             <p className="text-gray-500 text-xs dark:text-gray-400">
-              Calculator • Weather • Assistant
+              Framework for building AI agents
             </p>
           </div>
         </div>
