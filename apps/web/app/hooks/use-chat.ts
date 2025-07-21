@@ -29,6 +29,7 @@ export function useChat() {
         // Add user message to store
         addUserMessage(message);
         setState("loading");
+        setError(null); // Clear any previous errors
 
         // Create abort controller for this request
         abortControllerRef.current = new AbortController();
@@ -49,11 +50,11 @@ export function useChat() {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         if (!response.body) {
-          throw new Error("No response body received");
+          throw new Error("No response body received from server");
         }
 
         setState("streaming");
@@ -79,9 +80,48 @@ export function useChat() {
           parserRef.current?.finish();
 
           // Convert streaming messages to final messages
-          finalizeChatResponse();
+          try {
+            finalizeChatResponse();
+          } catch (finalizeError) {
+            console.error("Error finalizing chat response:", finalizeError);
+            setState("idle"); // Set to idle even if finalization fails
+          }
+        } catch (streamError) {
+          // Only log actual streaming errors, not normal completion
+          if (streamError instanceof Error) {
+            console.error("Stream reading error:", streamError);
+            // Only show error if it's not a normal stream completion
+            if (
+              !streamError.message.includes("input stream") &&
+              !streamError.message.includes("done") &&
+              streamError.name !== "AbortError"
+            ) {
+              setError(`Streaming error: ${streamError.message}`);
+              setState("idle"); // Ensure we set to idle even on error
+              return; // Don't finalize if there was a real error
+            }
+          }
+
+          // If it's just a normal stream completion error, continue with finalization
+          try {
+            parserRef.current?.finish();
+            finalizeChatResponse();
+          } catch (finalizeError) {
+            console.error(
+              "Error finalizing after stream completion:",
+              finalizeError
+            );
+            setState("idle");
+          }
         } finally {
-          reader.releaseLock();
+          try {
+            reader.releaseLock();
+          } catch (_releaseError) {
+            // Ignore errors when releasing lock - stream might already be closed
+            console.log("Stream already closed, ignoring release error");
+          }
+          // Always ensure we're in idle state after streaming
+          setState("idle");
         }
       } catch (error) {
         if (error instanceof Error) {
@@ -89,6 +129,7 @@ export function useChat() {
             // Request was aborted, don't show error
             setState("idle");
           } else {
+            console.error("Network error:", error);
             setError(error.message);
           }
         } else {

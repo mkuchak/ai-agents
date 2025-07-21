@@ -2,6 +2,8 @@ export type TransformedMessage = {
   role: "assistant" | "tool";
   content?: string;
   metadata: Record<string, unknown>;
+  timestamp: Date;
+  isStreaming?: boolean;
 };
 
 export type ToolResultObject = {
@@ -10,6 +12,9 @@ export type ToolResultObject = {
   input: Record<string, unknown>;
   output: Record<string, unknown>;
   timestamp?: string;
+  status?: "pending" | "running" | "completed" | "error";
+  startTime?: Date;
+  endTime?: Date;
 };
 
 export type ThoughtObject = {
@@ -17,6 +22,10 @@ export type ThoughtObject = {
   is_final_answer?: boolean;
   response_to_user?: string;
   action?: Record<string, unknown>;
+  startTime?: Date;
+  endTime?: Date;
+  duration?: number;
+  isStreaming?: boolean;
 };
 
 export type RawStreamObject =
@@ -30,6 +39,8 @@ export type ChatMessage = {
   content?: string;
   metadata?: Record<string, unknown>;
   timestamp: Date;
+  isStreaming?: boolean;
+  status?: "pending" | "running" | "completed" | "error";
 };
 
 export type ChatState = "idle" | "loading" | "streaming" | "error";

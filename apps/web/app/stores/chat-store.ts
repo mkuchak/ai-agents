@@ -35,33 +35,95 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     };
 
     set((state) => ({
-      messages: [...state.messages, userMessage],
+      // Mark previous assistant tools as completed when new user message comes
+      messages: [
+        ...state.messages.map((msg) => {
+          if (msg.role === "assistant" && msg.metadata?.tool) {
+            return {
+              ...msg,
+              status: "completed" as const,
+              metadata: {
+                ...msg.metadata,
+                tool: {
+                  ...(msg.metadata.tool as any),
+                  status: "completed",
+                },
+              },
+            };
+          }
+          return msg;
+        }),
+        userMessage,
+      ],
       streamingMessages: [],
       error: null,
     }));
   },
 
   updateStreamingMessages: (messages: TransformedMessage[]) => {
-    set({ streamingMessages: messages });
+    // Pass through the messages with their individual timing and status information
+    // The streaming parser now handles individual message completion tracking
+    set({ streamingMessages: messages, error: null }); // Clear errors during streaming
   },
 
   finalizeChatResponse: () => {
-    const { streamingMessages } = get();
+    try {
+      const { streamingMessages } = get();
 
-    // Convert streaming messages to chat messages
-    const newMessages: ChatMessage[] = streamingMessages.map((msg, index) => ({
-      id: `${msg.role}-${Date.now()}-${index}`,
-      role: msg.role,
-      content: msg.content,
-      metadata: msg.metadata,
-      timestamp: new Date(),
-    }));
+      // Convert streaming messages to chat messages, preserving their individual states
+      const newMessages: ChatMessage[] = streamingMessages.map((msg, index) => {
+        const finalMessage: ChatMessage = {
+          id: `${msg.role}-${Date.now()}-${index}`,
+          role: msg.role,
+          content: msg.content,
+          metadata: msg.metadata,
+          timestamp: msg.timestamp,
+          isStreaming: false, // All messages are no longer streaming
+          status: msg.role === "tool" ? "running" : "completed", // Tools stay running until next user message
+        };
 
-    set((state) => ({
-      messages: [...state.messages, ...newMessages],
-      streamingMessages: [],
-      state: "idle",
-    }));
+        // Update metadata to reflect final state
+        if (
+          finalMessage.metadata?.reasoning &&
+          typeof finalMessage.metadata.reasoning === "object"
+        ) {
+          const reasoning = finalMessage.metadata.reasoning as any;
+          reasoning.isStreaming = false; // Mark reasoning as no longer streaming
+        }
+
+        // Keep tools in running state until next user message
+        if (
+          finalMessage.metadata?.tool &&
+          typeof finalMessage.metadata.tool === "object"
+        ) {
+          const tool = finalMessage.metadata.tool as any;
+          if (tool.status === "completed") {
+            // If already completed by parser, keep it completed
+            finalMessage.status = "completed";
+          } else {
+            // Otherwise, keep it running until next user message
+            tool.status = "running";
+            finalMessage.status = "running";
+          }
+        }
+
+        return finalMessage;
+      });
+
+      set((state) => ({
+        messages: [...state.messages, ...newMessages],
+        streamingMessages: [],
+        state: "idle",
+        error: null, // Clear any errors on successful completion
+      }));
+    } catch (error) {
+      console.error("Error in finalizeChatResponse:", error);
+      // Still try to set state to idle even if there's an error
+      set((_state) => ({
+        streamingMessages: [],
+        state: "idle",
+      }));
+    }
   },
 
   setState: (state: ChatState) => {
