@@ -1,5 +1,4 @@
 import { Agent } from "@repo/ai-agents";
-import dedent from "dedent";
 import { z } from "zod";
 import { geminiCallLlm } from "../adapters/gemini-call-llm";
 
@@ -41,10 +40,10 @@ assistantAgent.registerTool({
       }
 
       const location = geocodingData.results[0];
-      const { latitude, longitude, name: foundCityName, country } = location;
+      const { latitude, longitude } = location;
 
       // Now get weather data using the coordinates
-      const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m&forecast_days=1`;
+      const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&hourly=temperature_2m`;
 
       const weatherResponse = await fetch(weatherApiUrl);
 
@@ -56,22 +55,7 @@ assistantAgent.registerTool({
 
       const weatherData = await weatherResponse.json();
 
-      const dailyData = weatherData.daily;
-      const hourlyData = weatherData.hourly;
-
-      const maxTemp = dailyData.temperature_2m_max[0];
-      const minTemp = dailyData.temperature_2m_min[0];
-      const currentTemp = hourlyData.temperature_2m[0];
-
-      const weatherReport = dedent`
-        Weather forecast for ${foundCityName}, ${country}:
-        * Current temperature: ${currentTemp}°C
-        * Today's maximum: ${maxTemp}°C
-        * Today's minimum: ${minTemp}°C`;
-
-      return {
-        content: weatherReport,
-      };
+      return weatherData;
     } catch (error) {
       console.error("Error fetching weather data:", error);
       return {

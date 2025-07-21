@@ -45,7 +45,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
               metadata: {
                 ...msg.metadata,
                 tool: {
-                  ...(msg.metadata.tool as any),
+                  ...msg.metadata.tool,
                   status: "completed",
                 },
               },
@@ -87,7 +87,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           finalMessage.metadata?.reasoning &&
           typeof finalMessage.metadata.reasoning === "object"
         ) {
-          const reasoning = finalMessage.metadata.reasoning as any;
+          const reasoning = finalMessage.metadata.reasoning;
           reasoning.isStreaming = false; // Mark reasoning as no longer streaming
         }
 
@@ -96,7 +96,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           finalMessage.metadata?.tool &&
           typeof finalMessage.metadata.tool === "object"
         ) {
-          const tool = finalMessage.metadata.tool as any;
+          const tool = finalMessage.metadata.tool;
           if (tool.status === "completed") {
             // If already completed by parser, keep it completed
             finalMessage.status = "completed";

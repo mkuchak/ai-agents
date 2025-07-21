@@ -43,12 +43,12 @@ app.post("/chat", async (req, res) => {
       // console.log("Message:", JSON.stringify(message, null, 2));
       totalCost += message.metadata?.usage?.cost ?? 0;
     },
-    onStreamingChunk: (_chunk) => {
-      // res.write(chunk);
+    onStreamingChunk: (chunk) => {
+      res.write(chunk);
       // buffer += chunk;
     },
-    onToolResult: (_toolResult) => {
-      // res.write(JSON.stringify(toolResult));
+    onToolResult: (toolResult) => {
+      res.write(JSON.stringify(toolResult));
       // buffer += JSON.stringify(toolResult);
     },
   });
@@ -64,10 +64,10 @@ app.post("/chat", async (req, res) => {
   // );
 
   // Stream the fake response slowly, character by character
-  for (let i = 0; i < fakeResponse.length; i++) {
-    res.write(fakeResponse[i]);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
+  // for (let i = 0; i < fakeResponse.length; i++) {
+  //   res.write(fakeResponse[i]);
+  //   await new Promise((resolve) => setTimeout(resolve, 20));
+  // }
 
   res.end();
 });
@@ -76,7 +76,7 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-const fakeResponse = `{
+const _fakeResponse = `{
  "thought": "The user is asking a mathematical question. The current vertical \`assistant\` does not have the capability to perform calculations. I need to load skills from the \`mathematician\` vertical to perform this calculation. After loading the skills, I will use the calculator tool to answer the question.",
  "action": {
   "tool_input": {
