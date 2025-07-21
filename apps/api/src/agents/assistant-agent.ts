@@ -4,7 +4,7 @@ import { z } from "zod";
 import { geminiCallLlm } from "../adapters/gemini-call-llm";
 
 export const assistantAgent = new Agent(
-  "You are a helpful assistant that can answer questions and help with tasks.",
+  "You are a helpful assistant that can answer questions and help with tasks or code problems.",
   geminiCallLlm
 );
 
@@ -15,7 +15,8 @@ assistantAgent.registerTool({
     cityName: z.string().min(1, "City name is required"),
   }),
   execute: async (input) => {
-    console.log("get_weather input:", JSON.stringify(input, null, 2));
+    // Sleep for 6 seconds before proceeding (simulate delay)
+    await new Promise((resolve) => setTimeout(resolve, 6000));
 
     try {
       const { cityName } = input;

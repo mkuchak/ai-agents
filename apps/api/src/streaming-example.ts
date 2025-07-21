@@ -147,7 +147,7 @@ class StreamingStateParser {
       const completeJsonStrings = parts.slice(0, -1);
 
       for (const str of completeJsonStrings) {
-        const completeJson = str + "}"; // Add the '}' removed by split
+        const completeJson = `${str}}`; // Add the '}' removed by split
         try {
           const parsed = JSON.parse(completeJson);
           const transformed = this.transformRawObject(parsed);
