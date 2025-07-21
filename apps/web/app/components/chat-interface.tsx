@@ -33,9 +33,9 @@ import {
   AIToolResult,
 } from "@repo/ui/components/ai/tool";
 import { Button } from "@repo/ui/components/button";
-import { TrashIcon } from "lucide-react";
 import { type FormEventHandler, useState } from "react";
 import { useChat } from "../hooks/use-chat";
+import { ChatHeader } from "./chat-header";
 import { ChatSuggestions } from "./chat-suggestions";
 
 export function ChatInterface() {
@@ -76,24 +76,7 @@ export function ChatInterface() {
   return (
     <div className="flex h-screen w-full flex-col bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b bg-background/80 p-6 backdrop-blur-sm">
-        <div>
-          <h1 className="font-bold text-2xl tracking-tight">AI Assistant</h1>
-          <p className="text-muted-foreground text-sm">
-            Powered by advanced AI agents
-          </p>
-        </div>
-        <Button
-          type="button"
-          onClick={clearMessages}
-          variant="ghost"
-          size="sm"
-          className="gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <TrashIcon size={16} />
-          Clear
-        </Button>
-      </div>
+      <ChatHeader onClearMessages={clearMessages} />
 
       {/* Chat Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -143,78 +126,71 @@ export function ChatInterface() {
                     /* Assistant Message */
                     <div className="space-y-2">
                       {/* Sources - No Avatar */}
-                      {message.metadata &&
-                        (message.metadata as any).sources && (
-                          <AISources>
-                            <AISourcesTrigger
-                              count={(message.metadata as any).sources.length}
-                            />
-                            <AISourcesContent>
-                              {(message.metadata as any).sources.map(
-                                (source: any, idx: number) => (
-                                  <div
-                                    key={idx}
-                                    className="rounded-lg border bg-muted/50 p-3"
+                      {message.metadata?.sources && (
+                        <AISources>
+                          <AISourcesTrigger
+                            count={message.metadata.sources.length}
+                          />
+                          <AISourcesContent>
+                            {message.metadata.sources.map(
+                              (source: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="rounded-lg border bg-muted/50 p-3"
+                                >
+                                  <a
+                                    href={source.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-primary hover:underline"
                                   >
-                                    <a
-                                      href={source.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="font-medium text-primary hover:underline"
-                                    >
-                                      {source.title}
-                                    </a>
-                                  </div>
-                                )
-                              )}
-                            </AISourcesContent>
-                          </AISources>
-                        )}
+                                    {source.title}
+                                  </a>
+                                </div>
+                              )
+                            )}
+                          </AISourcesContent>
+                        </AISources>
+                      )}
 
                       {/* Reasoning/Thoughts - No Avatar */}
-                      {message.metadata &&
-                        (message.metadata as any).reasoning && (
-                          <AIReasoning
-                            duration={
-                              (message.metadata as any).reasoning.duration || 0
-                            }
-                            isStreaming={
-                              (message.metadata as any).reasoning.isStreaming ||
-                              false
-                            }
-                          >
-                            <AIReasoningTrigger />
-                            <AIReasoningContent>
-                              {(message.metadata as any).reasoning.thought ||
-                                "Thinking..."}
-                            </AIReasoningContent>
-                          </AIReasoning>
-                        )}
+                      {message.metadata?.reasoning && (
+                        <AIReasoning
+                          duration={message.metadata.reasoning.duration || 0}
+                          isStreaming={
+                            message.metadata.reasoning.isStreaming || false
+                          }
+                        >
+                          <AIReasoningTrigger />
+                          <AIReasoningContent>
+                            {message.metadata.reasoning.thought ||
+                              "Thinking..."}
+                          </AIReasoningContent>
+                        </AIReasoning>
+                      )}
 
                       {/* Tool Calls - No Avatar */}
-                      {message.metadata && (message.metadata as any).tool && (
+                      {message.metadata?.tool && (
                         <AITool>
                           <AIToolHeader
-                            name={`Tool: ${(message.metadata as any).tool.name || "Unknown"}`}
-                            description={`${(message.metadata as any).tool.description || `Executing ${(message.metadata as any).tool.name || "tool"}`}`}
+                            name={`Tool: ${message.metadata.tool.name || "Unknown"}`}
+                            description={`${message.metadata.tool.description || `Executing ${message.metadata.tool.name || "tool"}`}`}
                             status={
-                              (message.metadata as any).tool.status ||
+                              message.metadata.tool.status ||
                               message.status ||
                               "completed"
                             }
                           />
                           <AIToolContent>
-                            {(message.metadata as any).tool.input && (
+                            {message.metadata.tool.input && (
                               <AIToolParameters
-                                parameters={
-                                  (message.metadata as any).tool.input
-                                }
+                                parameters={message.metadata.tool.input}
                               />
                             )}
-                            {(message.metadata as any).tool.output && (
+                            {message.metadata.tool.output && (
                               <AIToolResult
                                 result={JSON.stringify(
-                                  (message.metadata as any).tool.output,
+                                  message.metadata.tool.output,
                                   null,
                                   2
                                 )}
@@ -249,45 +225,38 @@ export function ChatInterface() {
                 >
                   <div className="space-y-2">
                     {/* Reasoning/Thoughts - No Avatar */}
-                    {message.metadata &&
-                      (message.metadata as any).reasoning && (
-                        <AIReasoning
-                          isStreaming={
-                            (message.metadata as any).reasoning.isStreaming !==
-                            false
-                          }
-                          duration={
-                            (message.metadata as any).reasoning.duration || 0
-                          }
-                        >
-                          <AIReasoningTrigger />
-                          <AIReasoningContent>
-                            {(message.metadata as any).reasoning.thought ||
-                              "Thinking..."}
-                          </AIReasoningContent>
-                        </AIReasoning>
-                      )}
+                    {message.metadata?.reasoning && (
+                      <AIReasoning
+                        isStreaming={
+                          message.metadata.reasoning.isStreaming !== false
+                        }
+                        duration={message.metadata.reasoning.duration || 0}
+                      >
+                        <AIReasoningTrigger />
+                        <AIReasoningContent>
+                          {message.metadata.reasoning.thought || "Thinking..."}
+                        </AIReasoningContent>
+                      </AIReasoning>
+                    )}
 
                     {/* Tool Calls - No Avatar */}
-                    {message.metadata && (message.metadata as any).tool && (
+                    {message.metadata?.tool && (
                       <AITool>
                         <AIToolHeader
-                          name={`Tool: ${(message.metadata as any).tool.name || "Unknown"}`}
-                          description={`${(message.metadata as any).tool.description || `Executing ${(message.metadata as any).tool.name || "tool"}`}`}
-                          status={
-                            (message.metadata as any).tool.status || "running"
-                          }
+                          name={`Tool: ${message.metadata.tool.name || "Unknown"}`}
+                          description={`${message.metadata.tool.description || `Executing ${message.metadata.tool.name || "tool"}`}`}
+                          status={message.metadata.tool.status || "running"}
                         />
                         <AIToolContent>
-                          {(message.metadata as any).tool.input && (
+                          {message.metadata.tool.input && (
                             <AIToolParameters
-                              parameters={(message.metadata as any).tool.input}
+                              parameters={message.metadata.tool.input}
                             />
                           )}
-                          {(message.metadata as any).tool.output && (
+                          {message.metadata.tool.output && (
                             <AIToolResult
                               result={JSON.stringify(
-                                (message.metadata as any).tool.output,
+                                message.metadata.tool.output,
                                 null,
                                 2
                               )}
