@@ -19,6 +19,7 @@
     "dedent": "^1.6.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
+    "jsonrepair": "^3.13.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {
