@@ -55,6 +55,8 @@ export interface ToolMetadata {
  * ```
  */
 export type ToolResultStreamingCallback = (toolResult: {
+  /** Whether the result is a tool result */
+  is_tool_result: boolean;
   /** The name of the tool that was executed */
   name: string;
   /** The input parameters passed to the tool (null if no input required) */

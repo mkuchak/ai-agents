@@ -384,6 +384,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
       // Stream tool result if callback is provided
       if (onToolResult) {
         onToolResult({
+          is_tool_result: true,
           name: toolName,
           input: parsedInput as SerializableValue,
           output: result as SerializableValue,
