@@ -16,7 +16,7 @@ type AIReasoningContextValue = {
   isStreaming: boolean;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  duration: number;
+  duration: number | undefined;
 };
 
 const AIReasoningContext = createContext<AIReasoningContextValue | null>(null);
@@ -35,6 +35,7 @@ export type AIReasoningProps = ComponentProps<typeof Collapsible> & {
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   duration?: number;
+  showDuration?: boolean;
 };
 
 export const AIReasoning = memo(
@@ -45,6 +46,7 @@ export const AIReasoning = memo(
     defaultOpen = false,
     onOpenChange,
     duration: durationProp,
+    showDuration = true,
     children,
     ...props
   }: AIReasoningProps) => {
@@ -53,26 +55,37 @@ export const AIReasoning = memo(
       defaultProp: defaultOpen,
       onChange: onOpenChange,
     });
-    const [duration, setDuration] = useControllableState({
-      prop: durationProp,
-      defaultProp: 0,
-    });
-
+    const [internalDuration, setInternalDuration] = useState(0);
     const [hasAutoClosedRef, setHasAutoClosedRef] = useState(false);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [wasManuallyOpened, setWasManuallyOpened] = useState(false);
 
-    // Track duration when streaming starts and ends
+    // Use external duration prop if provided, otherwise use internal calculation (only if showDuration is true)
+    const duration = showDuration
+      ? durationProp !== undefined
+        ? durationProp
+        : internalDuration
+      : undefined;
+
+    // Track duration when streaming starts and ends (only if showDuration is true and no external duration provided)
     useEffect(() => {
+      if (!showDuration || durationProp !== undefined) return; // Skip internal calculation if duration is disabled or external duration is provided
+
       if (isStreaming) {
         if (startTime === null) {
           setStartTime(Date.now());
         }
       } else if (startTime !== null) {
-        setDuration(Math.round((Date.now() - startTime) / 1000));
+        const durationInSeconds = (Date.now() - startTime) / 1000;
+        // Format duration: show 2 decimal places if less than 1 second, otherwise round to nearest integer
+        const formattedDuration =
+          durationInSeconds < 1
+            ? Math.round(durationInSeconds * 100) / 100
+            : Math.round(durationInSeconds);
+        setInternalDuration(formattedDuration);
         setStartTime(null);
       }
-    }, [isStreaming, startTime, setDuration]);
+    }, [isStreaming, startTime, durationProp, showDuration]);
 
     // Auto-open when streaming starts
     useEffect(() => {
@@ -119,7 +132,7 @@ export const AIReasoning = memo(
         value={{ isStreaming, isOpen, setIsOpen, duration }}
       >
         <Collapsible
-          className={cn("not-prose mb-4", className)}
+          className={cn("not-prose mb-4 pb-1", className)}
           onOpenChange={handleOpenChange}
           open={isOpen}
           {...props}
@@ -158,8 +171,14 @@ export const AIReasoningTrigger = memo(
           <>
             {isStreaming ? (
               <p>Thinking...</p>
+            ) : duration === undefined || duration === 0 ? (
+              <p>Thought</p>
             ) : (
-              <p>Thought for {duration} seconds</p>
+              <p>
+                Thought for{" "}
+                {duration < 2 ? duration.toFixed(2) : Math.round(duration)}{" "}
+                seconds
+              </p>
             )}
             <ChevronDownIcon
               className={cn(

@@ -149,21 +149,36 @@ export class StreamingStateParser {
     if ("thought" in rawObject) {
       const thoughtObj = rawObject as ThoughtObject;
 
-      // Create unique key for this specific reasoning message
-      const messageKey = `reasoning-${this.messageCounter++}`;
+      // Use a stable key for the current reasoning session
+      // Since reasoning happens sequentially, we can use a single key
+      const messageKey = `reasoning-current`;
 
-      // Get or create message state for this unique message
+      // Get or create message state for this specific reasoning session
       if (!this.messageStates.has(messageKey)) {
         this.messageStates.set(messageKey, {
           completed: false,
           startTime: now,
         });
+      } else {
+        // If this is a new reasoning session (not just an update), reset the start time
+        const currentState = this.messageStates.get(messageKey)!;
+        if (currentState.completed) {
+          // Previous session was completed, start a new one
+          this.messageStates.set(messageKey, {
+            completed: false,
+            startTime: now,
+          });
+        }
       }
 
       const messageState = this.messageStates.get(messageKey)!;
-      const duration = Math.round(
-        (now.getTime() - messageState.startTime.getTime()) / 1000
-      );
+      const durationInSeconds =
+        (now.getTime() - messageState.startTime.getTime()) / 1000;
+      // Format duration: show 2 decimal places if less than 1 second, otherwise round to nearest integer
+      const duration =
+        durationInSeconds < 1
+          ? Math.round(durationInSeconds * 100) / 100
+          : Math.round(durationInSeconds);
 
       if (isComplete) {
         messageState.completed = true;

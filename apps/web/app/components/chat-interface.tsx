@@ -89,178 +89,93 @@ export function ChatInterface() {
   const hasMessages = messages.length > 0 || streamingMessages.length > 0;
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background">
+    <div className="relative flex h-screen w-full flex-col divide-y overflow-hidden bg-background">
       {/* Header */}
       <ChatHeader onClearMessages={clearMessages} />
 
-      {/* Chat Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <AIConversation>
-          <AIConversationContent className="mx-auto w-full max-w-4xl px-4 py-6">
-            {!hasMessages && (
-              <div className="flex h-full items-center justify-center">
-                <div className="w-full space-y-8 text-center">
-                  <div className="space-y-4">
-                    <h2 className="font-bold text-3xl tracking-tight">
-                      How can I help you today?
-                    </h2>
-                    <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                      I'm your AI assistant, ready to help with coding,
-                      explanations, analysis, and much more. Choose a suggestion
-                      below or ask anything.
-                    </p>
-                  </div>
-                  <div className="pt-4">
-                    <ChatSuggestions
-                      onSuggestionClick={handleSuggestionClick}
-                    />
-                  </div>
+      {/* Chat Conversation */}
+      <AIConversation>
+        <AIConversationContent className="mx-auto w-full max-w-4xl">
+          {!hasMessages && (
+            <div className="flex h-full items-center justify-center">
+              <div className="w-full text-center">
+                <div className="space-y-4">
+                  <h2 className="font-bold text-3xl tracking-tight">
+                    How can I help you today?
+                  </h2>
+                  <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+                    I'm your AI assistant, ready to help with coding,
+                    explanations, analysis, and much more. Choose a suggestion
+                    below or ask anything.
+                  </p>
+                </div>
+                <div className="pt-8">
+                  <ChatSuggestions onSuggestionClick={handleSuggestionClick} />
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Messages */}
-            <div className="grid w-full gap-1 [&>div]:pb-0">
-              {/* Final Messages */}
-              {messages.map((message) => (
-                <div key={message.id} className="block gap-1 [&>div]:pb-0">
-                  {message.role === "user" ? (
-                    /* User Message */
-                    message.content && (
-                      <AIMessage from="user">
-                        <AIMessageContent>
-                          <AIResponse>{message.content}</AIResponse>
-                        </AIMessageContent>
-                        <AIMessageAvatar
-                          name="You"
-                          src="https://github.com/ghost.png"
+          {/* Messages */}
+          <div className="space-y-1">
+            {/* Final Messages */}
+            {messages.map((message) => (
+              <div key={message.id}>
+                {message.role === "user" ? (
+                  /* User Message */
+                  message.content && (
+                    <AIMessage from="user">
+                      <AIMessageContent>
+                        <AIResponse>{message.content}</AIResponse>
+                      </AIMessageContent>
+                      <AIMessageAvatar
+                        name="You"
+                        src="https://github.com/ghost.png"
+                      />
+                    </AIMessage>
+                  )
+                ) : (
+                  /* Assistant Message */
+                  <div className="space-y-1">
+                    {/* Sources */}
+                    {message.metadata?.sources && (
+                      <AISources>
+                        <AISourcesTrigger
+                          count={message.metadata.sources.length}
                         />
-                      </AIMessage>
-                    )
-                  ) : (
-                    /* Assistant Message */
-                    <div className="space-y-2">
-                      {/* Sources - No Avatar */}
-                      {message.metadata?.sources && (
-                        <AISources>
-                          <AISourcesTrigger
-                            count={message.metadata.sources.length}
-                          />
-                          <AISourcesContent>
-                            {message.metadata.sources.map(
-                              (source: any, idx: number) => (
-                                <div
-                                  key={idx}
-                                  className="rounded-lg border bg-muted/50 p-3"
+                        <AISourcesContent>
+                          {message.metadata.sources.map(
+                            (source: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="rounded-lg border bg-muted/50 p-3"
+                              >
+                                <a
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-primary hover:underline"
                                 >
-                                  <a
-                                    href={source.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-medium text-primary hover:underline"
-                                  >
-                                    {source.title}
-                                  </a>
-                                </div>
-                              )
-                            )}
-                          </AISourcesContent>
-                        </AISources>
-                      )}
-
-                      {/* Reasoning/Thoughts - No Avatar */}
-                      {message.metadata?.reasoning && (
-                        <AIReasoning
-                          duration={message.metadata.reasoning.duration || 0}
-                          isStreaming={
-                            message.metadata.reasoning.isStreaming || false
-                          }
-                        >
-                          <AIReasoningTrigger />
-                          <AIReasoningContent>
-                            {message.metadata.reasoning.thought ||
-                              "Thinking..."}
-                          </AIReasoningContent>
-                        </AIReasoning>
-                      )}
-
-                      {/* Tool Calls - No Avatar */}
-                      {message.metadata?.tool && (
-                        <AITool>
-                          <AIToolHeader
-                            name={`Tool: ${message.metadata.tool.name || "Unknown"}`}
-                            description={`${message.metadata.tool.description || `Executing ${message.metadata.tool.name || "tool"}`}`}
-                            status={
-                              message.metadata.tool.status ||
-                              message.status ||
-                              "completed"
-                            }
-                          />
-                          <AIToolContent>
-                            {message.metadata.tool.input && (
-                              <AIToolParameters
-                                parameters={message.metadata.tool.input}
-                              />
-                            )}
-                            {message.metadata.tool.output && (
-                              <AIToolResult
-                                result={JSON.stringify(
-                                  message.metadata.tool.output,
-                                  null,
-                                  2
-                                )}
-                              />
-                            )}
-                          </AIToolContent>
-                        </AITool>
-                      )}
-
-                      {/* AI Response Content - With Avatar */}
-                      {message.content && (
-                        <AIMessage from="assistant">
-                          <AIMessageContent>
-                            <AIResponse>{message.content}</AIResponse>
-                          </AIMessageContent>
-                          <AIMessageAvatar
-                            name="AI"
-                            src="https://github.com/openai.png"
-                          />
-                        </AIMessage>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Streaming Messages */}
-              {streamingMessages.map((message, index) => (
-                <div
-                  key={`streaming-${index}`}
-                  className="block gap-1 [&>div]:pb-0"
-                >
-                  <div className="space-y-2">
-                    {/* Reasoning/Thoughts - No Avatar */}
-                    {message.metadata?.reasoning && (
-                      <AIReasoning
-                        isStreaming={
-                          message.metadata.reasoning.isStreaming !== false
-                        }
-                        duration={message.metadata.reasoning.duration || 0}
-                      >
-                        <AIReasoningTrigger />
-                        <AIReasoningContent>
-                          {message.metadata.reasoning.thought || "Thinking..."}
-                        </AIReasoningContent>
-                      </AIReasoning>
+                                  {source.title}
+                                </a>
+                              </div>
+                            )
+                          )}
+                        </AISourcesContent>
+                      </AISources>
                     )}
 
-                    {/* Tool Calls - No Avatar */}
+                    {/* Tools */}
                     {message.metadata?.tool && (
-                      <AITool>
+                      <AITool className="mt-4">
                         <AIToolHeader
                           name={`Tool: ${message.metadata.tool.name || "Unknown"}`}
                           description={`${message.metadata.tool.description || `Executing ${message.metadata.tool.name || "tool"}`}`}
-                          status={message.metadata.tool.status || "running"}
+                          status={
+                            message.metadata.tool.status ||
+                            message.status ||
+                            "completed"
+                          }
                         />
                         <AIToolContent>
                           {message.metadata.tool.input && (
@@ -281,15 +196,27 @@ export function ChatInterface() {
                       </AITool>
                     )}
 
-                    {/* AI Response Content - With Avatar */}
+                    {/* Reasoning */}
+                    {message.metadata?.reasoning && (
+                      <AIReasoning
+                        className="my-0"
+                        duration={message.metadata.reasoning.duration || 0}
+                        isStreaming={
+                          message.metadata.reasoning.isStreaming || false
+                        }
+                      >
+                        <AIReasoningTrigger />
+                        <AIReasoningContent>
+                          {message.metadata.reasoning.thought || "Thinking..."}
+                        </AIReasoningContent>
+                      </AIReasoning>
+                    )}
+
+                    {/* AI Response Content */}
                     {message.content && (
                       <AIMessage from="assistant">
                         <AIMessageContent>
                           <AIResponse>{message.content}</AIResponse>
-                          <span className="ml-2 inline-flex items-center gap-1 text-muted-foreground">
-                            <span className="animate-pulse">●</span>
-                            <span className="text-xs">Streaming...</span>
-                          </span>
                         </AIMessageContent>
                         <AIMessageAvatar
                           name="AI"
@@ -298,60 +225,125 @@ export function ChatInterface() {
                       </AIMessage>
                     )}
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
+            ))}
 
-              {/* Loading State */}
-              {state === "loading" && (
-                <div className="block gap-1 [&>div]:pb-0">
-                  <AIMessage from="assistant">
-                    <AIMessageContent>
-                      <div className="flex items-center gap-3 text-muted-foreground">
-                        <div className="flex space-x-1">
-                          <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.3s]"></div>
-                          <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.15s]"></div>
-                          <div className="h-2 w-2 animate-bounce rounded-full bg-current"></div>
-                        </div>
-                        <span>Connecting to AI agent...</span>
+            {/* Streaming Messages */}
+            {streamingMessages.map((message, index) => (
+              <div key={`streaming-${index}`}>
+                <div className="space-y-1">
+                  {/* Reasoning */}
+                  {message.metadata?.reasoning && (
+                    <AIReasoning
+                      isStreaming={
+                        message.metadata.reasoning.isStreaming !== false
+                      }
+                      duration={message.metadata.reasoning.duration || 0}
+                    >
+                      <AIReasoningTrigger />
+                      <AIReasoningContent>
+                        {message.metadata.reasoning.thought || "Thinking..."}
+                      </AIReasoningContent>
+                    </AIReasoning>
+                  )}
+
+                  {/* Tools */}
+                  {message.metadata?.tool && (
+                    <AITool>
+                      <AIToolHeader
+                        name={`Tool: ${message.metadata.tool.name || "Unknown"}`}
+                        description={`${message.metadata.tool.description || `Executing ${message.metadata.tool.name || "tool"}`}`}
+                        status={message.metadata.tool.status || "running"}
+                      />
+                      <AIToolContent>
+                        {message.metadata.tool.input && (
+                          <AIToolParameters
+                            parameters={message.metadata.tool.input}
+                          />
+                        )}
+                        {message.metadata.tool.output && (
+                          <AIToolResult
+                            result={JSON.stringify(
+                              message.metadata.tool.output,
+                              null,
+                              2
+                            )}
+                          />
+                        )}
+                      </AIToolContent>
+                    </AITool>
+                  )}
+
+                  {/* AI Response Content */}
+                  {message.content && (
+                    <AIMessage from="assistant">
+                      <AIMessageContent>
+                        <AIResponse>{message.content}</AIResponse>
+                        <span className="ml-2 inline-flex items-center gap-1 text-muted-foreground">
+                          <span className="animate-pulse">●</span>
+                          <span className="text-xs">Streaming...</span>
+                        </span>
+                      </AIMessageContent>
+                      <AIMessageAvatar
+                        name="AI"
+                        src="https://github.com/openai.png"
+                      />
+                    </AIMessage>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Loading State */}
+            {state === "loading" && (
+              <div>
+                <AIMessage from="assistant">
+                  <AIMessageContent>
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <div className="flex space-x-1">
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.3s]"></div>
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.15s]"></div>
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-current"></div>
                       </div>
-                    </AIMessageContent>
-                    <AIMessageAvatar
-                      name="AI"
-                      src="https://github.com/openai.png"
-                    />
-                  </AIMessage>
-                </div>
-              )}
-            </div>
-          </AIConversationContent>
-          <AIConversationScrollButton />
-        </AIConversation>
-      </div>
+                      <span>Connecting to AI agent...</span>
+                    </div>
+                  </AIMessageContent>
+                  <AIMessageAvatar
+                    name="AI"
+                    src="https://github.com/openai.png"
+                  />
+                </AIMessage>
+              </div>
+            )}
+          </div>
+        </AIConversationContent>
+        <AIConversationScrollButton />
+      </AIConversation>
 
-      {/* Suggestions when there are messages - Horizontal scroll */}
-      {hasMessages && (
-        <div className="border-t bg-background/80 p-4 backdrop-blur-sm">
-          <div className="mx-auto max-w-4xl">
+      {/* Bottom Section */}
+      <div className="grid shrink-0 gap-4 pt-4">
+        {/* Suggestions */}
+        {hasMessages && (
+          <div className="px-4">
             <ChatSuggestions onSuggestionClick={handleSuggestionClick} />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Error Display */}
-      {error && (
-        <div className="mx-auto mb-4 w-full max-w-4xl px-4">
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Error:</span>
-              <span>{error}</span>
+        {/* Error Display */}
+        {error && (
+          <div className="px-4">
+            <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Error:</span>
+                <span>{error}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Input Area */}
-      <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
-        <div className="mx-auto max-w-4xl">
+        {/* Input Area */}
+        <div className="w-full px-4 pb-4">
           <AIInput onSubmit={handleSubmit}>
             <AIInputTextarea
               onChange={(event) => setText(event.target.value)}
