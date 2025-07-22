@@ -33,7 +33,7 @@ import {
   AIToolResult,
 } from "@repo/ui/components/ai/tool";
 import { Button } from "@repo/ui/components/button";
-import { type FormEventHandler, useState } from "react";
+import { type FormEventHandler, useEffect, useState } from "react";
 import { useChat } from "../hooks/use-chat";
 import { ChatHeader } from "./chat-header";
 import { ChatSuggestions } from "./chat-suggestions";
@@ -50,6 +50,21 @@ export function ChatInterface() {
     stopGeneration,
     clearMessages,
   } = useChat();
+
+  // Essential debugging - only log when state changes or we get final messages
+  useEffect(() => {
+    if (state === "idle" && messages.length > 0) {
+      console.log("🏁 Chat finished - Final messages:", messages.length);
+      messages.forEach((msg, i) => {
+        if (msg.content && msg.content.includes("$$")) {
+          console.log(
+            `📐 Message ${i} contains LaTeX:`,
+            msg.content.substring(0, 100)
+          );
+        }
+      });
+    }
+  }, [messages, state]);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();

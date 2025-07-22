@@ -236,7 +236,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
                 <agent_behavior>
                   * Break thought in small tasks, reflect if ALL were performed
                   * Tool invocations should not be mentioned, NOR skills
-                  * NEVER mark \`is_final_answer\` true if you have pending tasks * unless you need the user's input
+                  * NEVER mark \`is_final_answer\` true if you have pending tasks - unless you need the user's input
                   * Review the conversation history to reasoning
                   * If you plan to fire a tool, then you need to put an \`action\` in the correct JSON format of <response_format>
                     * Without an action, no tool is called

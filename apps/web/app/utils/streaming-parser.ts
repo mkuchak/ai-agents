@@ -150,7 +150,7 @@ export class StreamingStateParser {
       const thoughtObj = rawObject as ThoughtObject;
 
       // Create unique key for this specific reasoning message
-      const messageKey = `reasoning-${this.messageCounter}`;
+      const messageKey = `reasoning-${this.messageCounter++}`;
 
       // Get or create message state for this unique message
       if (!this.messageStates.has(messageKey)) {
@@ -195,16 +195,53 @@ export class StreamingStateParser {
   }
 
   private parseAndEmit(): void {
-    // Regex to find boundaries between JSON objects: `}` followed by `{`
-    const jsonBoundaries = /}(?=\s*?{)/g;
-    const parts = this.currentJsonChunk.split(jsonBoundaries);
+    // Find complete JSON objects by tracking braces while respecting strings
+    const completeJsonStrings: string[] = [];
+    let currentJson = "";
+    let braceCount = 0;
+    let inString = false;
+    let escapeNext = false;
 
-    // If `split` returned more than one part, it means one or more JSONs were completed
-    if (parts.length > 1) {
-      const completeJsonStrings = parts.slice(0, -1);
+    for (let i = 0; i < this.currentJsonChunk.length; i++) {
+      const char = this.currentJsonChunk[i];
+      currentJson += char;
 
-      for (const str of completeJsonStrings) {
-        const completeJson = `${str}}`; // Add the '}' removed by split
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escapeNext = true;
+        continue;
+      }
+
+      if (char === '"' && !escapeNext) {
+        inString = !inString;
+        continue;
+      }
+
+      if (!inString) {
+        if (char === "{") {
+          braceCount++;
+        } else if (char === "}") {
+          braceCount--;
+
+          // If we've closed all braces, we have a complete JSON
+          if (braceCount === 0 && currentJson.trim().startsWith("{")) {
+            completeJsonStrings.push(currentJson.trim());
+            currentJson = "";
+          }
+        }
+      }
+    }
+
+    // Store remaining incomplete JSON
+    this.currentJsonChunk = currentJson;
+
+    // Process complete JSON objects
+    if (completeJsonStrings.length > 0) {
+      for (const completeJson of completeJsonStrings) {
         try {
           const parsed = JSON.parse(completeJson);
           const transformed = this.transformRawObject(parsed, true); // Mark as complete
@@ -212,16 +249,18 @@ export class StreamingStateParser {
             // Each message is unique, so just add it
             this.completedMessages.push(transformed);
           }
-        } catch (_e) {
+        } catch (jsonError) {
           console.warn(
-            "Error processing complete JSON (ignoring):",
-            `${completeJson.substring(0, 100)}...`
+            "⚠️ JSON parsing failed for complete object:",
+            jsonError instanceof Error ? jsonError.message : String(jsonError)
+          );
+          console.warn(
+            "📝 JSON content:",
+            `${completeJson.substring(0, 150)}...`
           );
           // Don't throw error for malformed JSON, just skip it
         }
       }
-      // The new chunk to be processed is the last part, which is incomplete
-      this.currentJsonChunk = parts[parts.length - 1] || "";
     }
 
     // Now, try to process the current chunk (which may be partial)
