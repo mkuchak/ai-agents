@@ -43,7 +43,7 @@ assistantAgent.registerTool({
       const { latitude, longitude } = location;
 
       // Now get weather data using the coordinates
-      const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&hourly=temperature_2m`;
+      const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`;
 
       const weatherResponse = await fetch(weatherApiUrl);
 
