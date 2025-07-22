@@ -5,6 +5,7 @@ import { calculatorAgent } from "./calculator-agent";
 export const orchestratorAgent = new AgentOrchestrator("assistant");
 orchestratorAgent.registerAgent("assistant", assistantAgent, [
   "help with general questions",
+  "help with code problems",
   "check the weather",
 ]);
 orchestratorAgent.registerAgent("mathematician", calculatorAgent, [

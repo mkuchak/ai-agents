@@ -15,7 +15,7 @@ assistantAgent.registerTool({
   }),
   execute: async (input) => {
     // Sleep for 6 seconds before proceeding (simulate delay)
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    // await new Promise((resolve) => setTimeout(resolve, 6000));
 
     try {
       const { cityName } = input;
