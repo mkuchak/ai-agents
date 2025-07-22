@@ -60,6 +60,7 @@ export const AIReasoning = memo(
 
     const [hasAutoClosedRef, setHasAutoClosedRef] = useState(false);
     const [startTime, setStartTime] = useState<number | null>(null);
+    const [wasManuallyOpened, setWasManuallyOpened] = useState(false);
 
     // Track duration when streaming starts and ends
     useEffect(() => {
@@ -73,11 +74,22 @@ export const AIReasoning = memo(
       }
     }, [isStreaming, startTime, setDuration]);
 
-    // Auto-open when streaming starts, auto-close when streaming ends (once only)
+    // Auto-open when streaming starts
     useEffect(() => {
       if (isStreaming && !isOpen) {
         setIsOpen(true);
-      } else if (!isStreaming && isOpen && !defaultOpen && !hasAutoClosedRef) {
+      }
+    }, [isStreaming, isOpen, setIsOpen]);
+
+    // Auto-close when streaming ends (only if not manually opened and not defaultOpen)
+    useEffect(() => {
+      if (
+        !isStreaming &&
+        isOpen &&
+        !defaultOpen &&
+        !hasAutoClosedRef &&
+        !wasManuallyOpened
+      ) {
         // Add a small delay before closing to allow user to see the content
         const timer = setTimeout(() => {
           setIsOpen(false);
@@ -85,10 +97,21 @@ export const AIReasoning = memo(
         }, 1000);
         return () => clearTimeout(timer);
       }
-    }, [isStreaming, isOpen, defaultOpen, setIsOpen, hasAutoClosedRef]);
+    }, [
+      isStreaming,
+      isOpen,
+      defaultOpen,
+      hasAutoClosedRef,
+      wasManuallyOpened,
+      setIsOpen,
+    ]);
 
     const handleOpenChange = (open: boolean) => {
       setIsOpen(open);
+      // If user manually opens/closes, track this to prevent auto-closing
+      if (open) {
+        setWasManuallyOpened(true);
+      }
     };
 
     return (

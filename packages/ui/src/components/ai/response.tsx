@@ -21,7 +21,9 @@ import { cn } from "@repo/ui/lib/utils";
 import type { HTMLAttributes } from "react";
 import { memo } from "react";
 import ReactMarkdown, { type Options } from "react-markdown";
+import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 
 export type AIResponseProps = HTMLAttributes<HTMLDivElement> & {
   options?: Options;
@@ -169,22 +171,104 @@ const components: Options["components"] = {
 };
 
 export const AIResponse = memo(
-  ({ className, options, children, ...props }: AIResponseProps) => (
-    <div
-      className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        className
-      )}
-      {...props}
-    >
-      <ReactMarkdown
-        components={components}
-        remarkPlugins={[remarkGfm]}
-        {...options}
+  ({ className, options, children, ...props }: AIResponseProps) => {
+    // Add a visible fallback for debugging
+    if (!children) {
+      return (
+        <div
+          className={cn("size-full border border-red-500 p-2", className)}
+          {...props}
+        >
+          <p className="text-red-500">No content provided to AIResponse</p>
+        </div>
+      );
+    }
+
+    // Convert LaTeX syntax for compatibility
+    let processedChildren = children;
+    if (typeof children === "string") {
+      // Convert \[...\] to $$...$$ for block math
+      processedChildren = children
+        .replace(/\\\[(.*?)\\\]/g, "$$$$1$$")
+        // Convert \(...\) to $...$ for inline math
+        .replace(/\\\((.*?)\\\)/g, "$$$1$$");
+
+      // LaTeX syntax conversion applied silently
+    }
+
+    // First try with LaTeX support
+    const renderWithLatex = () => {
+      return (
+        <ReactMarkdown
+          components={components}
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+          {...options}
+        >
+          {processedChildren}
+        </ReactMarkdown>
+      );
+    };
+
+    // Fallback without LaTeX support
+    const renderWithoutLatex = () => {
+      return (
+        <ReactMarkdown
+          components={components}
+          remarkPlugins={[remarkGfm]}
+          {...options}
+        >
+          {processedChildren}
+        </ReactMarkdown>
+      );
+    };
+
+    // Final fallback - just render as text
+    const renderAsText = () => {
+      return (
+        <div className="rounded border border-yellow-300 bg-yellow-50 p-4">
+          <p className="mb-2 font-medium text-sm text-yellow-800">
+            ⚠️ Markdown processing failed - showing raw text:
+          </p>
+          <pre className="whitespace-pre-wrap text-gray-800 text-sm">
+            {String(processedChildren)}
+          </pre>
+        </div>
+      );
+    };
+
+    return (
+      <div
+        className={cn(
+          "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+          className
+        )}
+        {...props}
       >
-        {children}
-      </ReactMarkdown>
-    </div>
-  ),
+        {(() => {
+          // Try LaTeX first
+          try {
+            return renderWithLatex();
+          } catch (latexError) {
+            console.warn(
+              "⚠️ LaTeX rendering failed, trying without LaTeX:",
+              latexError
+            );
+
+            // Try without LaTeX
+            try {
+              return renderWithoutLatex();
+            } catch (basicError) {
+              console.error(
+                "💥 Basic markdown failed, using text fallback:",
+                basicError
+              );
+              return renderAsText();
+            }
+          }
+        })()}
+      </div>
+    );
+  },
   (prevProps, nextProps) => prevProps.children === nextProps.children
 );
