@@ -76,7 +76,7 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-const _fakeResponse = `{
+const fakeResponse = `{
  "thought": "The user is asking a mathematical question. The current vertical \`assistant\` does not have the capability to perform calculations. I need to load skills from the \`mathematician\` vertical to perform this calculation. After loading the skills, I will use the calculator tool to answer the question.",
  "action": {
   "tool_input": {
