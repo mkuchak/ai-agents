@@ -1,6 +1,9 @@
 import dedent from "dedent";
 import type { AgentInterface } from "../contracts/agent";
-import type { StreamingCallback } from "../contracts/llm";
+import type {
+  LlmInteractionCallback,
+  StreamingCallback,
+} from "../contracts/llm";
 import type { Message, OnMessage } from "../contracts/message";
 import type { OrchestratorContext } from "../contracts/orchestrator";
 import type { ToolResultStreamingCallback } from "../contracts/tool";
@@ -62,7 +65,7 @@ export class AgentOrchestrator {
     const agentInfos = agentIds.map((agentId) => {
       const registeredAgent = AgentRegistry.getInstance().getAgent(agentId);
       const capabilities = registeredAgent?._capabilities || [];
-      return `- The vertical agent ID \`${agentId}\` can ${capabilities.join(", ")}`;
+      return `* The vertical agent ID \`${agentId}\` can ${capabilities.join(", ")}`;
     });
 
     return dedent`
@@ -129,6 +132,7 @@ export class AgentOrchestrator {
     onStreamingChunk,
     onToolResult,
     preferredAgentId,
+    onLlmInteraction,
   }: {
     message: Message;
     history?: Message[];
@@ -137,6 +141,7 @@ export class AgentOrchestrator {
     onStreamingChunk?: StreamingCallback;
     onToolResult?: ToolResultStreamingCallback;
     preferredAgentId?: string;
+    onLlmInteraction?: LlmInteractionCallback;
   }): Promise<Message[]> {
     // Create a new sequence for each execution
     const handoffSequence: string[] = [];
@@ -153,6 +158,7 @@ export class AgentOrchestrator {
       onToolResult,
       steps: 0,
       handoffSequence, // Pass the sequence as a parameter
+      onLlmInteraction,
     });
   }
 
@@ -179,6 +185,7 @@ export class AgentOrchestrator {
     onToolResult,
     steps,
     handoffSequence,
+    onLlmInteraction,
   }: {
     agentId: string;
     message?: Message;
@@ -189,6 +196,7 @@ export class AgentOrchestrator {
     onToolResult?: ToolResultStreamingCallback;
     steps: number;
     handoffSequence: string[];
+    onLlmInteraction?: LlmInteractionCallback;
   }): Promise<Message[]> {
     // Check if we've exceeded the maximum number of steps
     if (steps >= this.maxSteps) {
@@ -246,6 +254,7 @@ export class AgentOrchestrator {
         onMessage: wrappedOnMessage,
         onStreamingChunk,
         onToolResult,
+        onLlmInteraction,
       });
 
       // Check if skills loading was requested
@@ -301,6 +310,7 @@ export class AgentOrchestrator {
           onToolResult,
           steps: steps + 1,
           handoffSequence,
+          onLlmInteraction,
         });
 
         // Return all messages, including those from the target agent

@@ -1,5 +1,5 @@
 import type * as z from "zod";
-import type { StreamingCallback } from "./llm";
+import type { LlmInteractionCallback, StreamingCallback } from "./llm";
 import type { Message, OnMessage } from "./message";
 import type { Tool, ToolResultStreamingCallback } from "./tool";
 
@@ -60,6 +60,8 @@ export interface AgentInterface<C = unknown> {
     onToolResult?: ToolResultStreamingCallback;
     /** Context data to pass to tools and execution logic */
     context?: C;
+    /** Callback for tracking LLM input/output interactions */
+    onLlmInteraction?: LlmInteractionCallback;
   }): Promise<Message[]>;
 }
 

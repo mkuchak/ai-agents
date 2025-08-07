@@ -3,6 +3,7 @@ import * as z from "zod";
 import type { AgentInterface } from "../contracts/agent";
 import type {
   CallLlm,
+  LlmInteractionCallback,
   LlmResponseFormat,
   StreamingCallback,
 } from "../contracts/llm";
@@ -33,6 +34,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
   private isHandoffEnabled: boolean = false;
   private timeZone: TimeZone;
   private locale: Locale;
+  private onLlmInteraction?: LlmInteractionCallback;
 
   constructor(
     systemPrompt: string,
@@ -41,6 +43,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
       maxSteps?: number;
       timeZone?: TimeZone;
       locale?: Locale;
+      onLlmInteraction?: LlmInteractionCallback;
     }
   ) {
     this._systemPrompt = systemPrompt;
@@ -48,6 +51,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
     this.maxSteps = options?.maxSteps ?? DEFAULT_MAX_STEPS;
     this.timeZone = options?.timeZone ?? DEFAULT_TIMEZONE;
     this.locale = options?.locale ?? DEFAULT_LOCALE;
+    this.onLlmInteraction = options?.onLlmInteraction;
   }
 
   /**
@@ -151,10 +155,10 @@ export class Agent<C = unknown> implements AgentInterface<C> {
     });
 
     return formatXml(dedent`
-          <scope>
-            <system>
-              <date>${dayOfWeek}, ${date} at ${time}</date>
-          
+      <scope>
+        <system>
+          <date>${dayOfWeek}, ${date} at ${time}</date>
+
           <vertical_guidelines>
             ${systemPrompt}
 
@@ -182,7 +186,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
                   3. OBSERVE: Verify completion
                   4. REPEAT...
                 </workflow>
-  
+
                 <critical_rules>
                   * Execute all tools before responding
                   * Use past tense for completed actions
@@ -250,15 +254,15 @@ export class Agent<C = unknown> implements AgentInterface<C> {
                   * FALSE: Continue execution WITHOUT user input
                   * TRUE: WAIT FOR USER INPUT before continuing
                 </final_answer_rules>
-
+                      
                 <!-- KERNEL ATTENTION: If you disrespect these KERNEL rules, the entire system will collapse -->
               </rules>
-              
+
               <response_format>
                 <!-- CRITICAL: YOUR RESPONSE MUST STRICTLY FOLLOW ONE OF THESE FORMATS EXACTLY -->
                 <!-- ANY DEVIATION FROM THESE FORMATS WILL CAUSE SYSTEM FAILURE -->
                 <!-- THE RESPONSE FORMAT IS MANDATORY AND NON-NEGOTIABLE -->
-                
+
                 <!-- Intermediate step: following the flow to complete the task -->
                 {
                   "thought": "Analysis and reasoning",
@@ -269,14 +273,14 @@ export class Agent<C = unknown> implements AgentInterface<C> {
                   },
                   "is_final_answer": false
                 }
-  
+
                 <!-- Final response: stop and wait for the user input -->
                 {
                   "thought": "Completion summary",
                   "response_to_user": "Comprehensive results",
                   "is_final_answer": true
                 }
-                
+
                 <!-- THE SYSTEM CANNOT PARSE ANY OTHER FORMAT -->
                 <!-- YOUR RESPONSE MUST BE VALID JSON MATCHING ONE OF THESE STRUCTURES -->
                 <!-- FAILURE TO COMPLY WILL RESULT IN SYSTEM BREAKDOWN -->
@@ -382,15 +386,13 @@ export class Agent<C = unknown> implements AgentInterface<C> {
       const result = await tool.execute(validatedInput, context as C);
 
       // Stream tool result if callback is provided
-      if (onToolResult) {
-        onToolResult({
-          is_tool_result: true,
-          name: toolName,
-          input: parsedInput as SerializableValue,
-          output: result as SerializableValue,
-          timestamp: new Date(),
-        });
-      }
+      onToolResult?.({
+        is_tool_result: true,
+        name: toolName,
+        input: parsedInput as SerializableValue,
+        output: result as SerializableValue,
+        timestamp: new Date(),
+      });
 
       return JSON.stringify(result);
     } catch (error: unknown) {
@@ -420,6 +422,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
     onStreamingChunk,
     onToolResult,
     context,
+    onLlmInteraction,
   }: {
     message?: Message;
     history?: Message[];
@@ -427,6 +430,7 @@ export class Agent<C = unknown> implements AgentInterface<C> {
     onStreamingChunk?: StreamingCallback;
     onToolResult?: ToolResultStreamingCallback;
     context?: C;
+    onLlmInteraction?: LlmInteractionCallback;
   }): Promise<Message[]> {
     const messages: Message[] = [];
 
@@ -483,7 +487,11 @@ export class Agent<C = unknown> implements AgentInterface<C> {
         [...history, ...messages],
         this._systemPrompt
       );
-      const response = await this.callLlm(prompt, onStreamingChunk);
+      const response = await this.callLlm(
+        prompt,
+        onStreamingChunk,
+        onLlmInteraction || this.onLlmInteraction
+      );
 
       if (!response) {
         throw new Error("Failed to get response from LLM");
