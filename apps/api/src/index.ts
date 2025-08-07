@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { LlmInteractionData, Message } from "@repo/ai-agents";
 import cors from "cors";
 import { config } from "dotenv";
 import express from "express";
@@ -7,7 +8,10 @@ import { orchestratorAgent } from "./agents/orchestrator-agent";
 config();
 
 const PORT = process.env.PORT || 3000;
-const USD_TO_BRL_RATE = 5.58;
+const USD_TO_BRL_RATE = 5.46;
+
+const messagesDatabase: Message[] = [];
+const llmInteractionLogs: (LlmInteractionData & { timestamp: string })[] = [];
 
 const app = express();
 
@@ -26,42 +30,45 @@ app.use(express.json());
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
   let totalCost = 0;
-  // let buffer = "";
 
   // Set up simple streaming response
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Transfer-Encoding", "chunked");
 
-  // const messages = await orchestratorAgent.run({
-  await orchestratorAgent.run({
+  const messages = await orchestratorAgent.run({
+    history: messagesDatabase,
     message: {
       role: "user",
       content: message,
     },
     onMessage: (message) => {
       message.id = randomUUID();
-      // console.log("Message:", JSON.stringify(message, null, 2));
       totalCost += message.metadata?.usage?.cost ?? 0;
     },
     onStreamingChunk: (chunk) => {
       res.write(chunk);
-      // buffer += chunk;
     },
     onToolResult: (toolResult) => {
       res.write(JSON.stringify(toolResult));
-      // buffer += JSON.stringify(toolResult);
+    },
+    onLlmInteraction: (data) => {
+      llmInteractionLogs.push({
+        input: data.input,
+        output: data.output,
+        timestamp: new Date().toISOString(),
+      });
     },
   });
 
+  messagesDatabase.push(...messages);
+
+  const totalCostInUsdCents = Number((totalCost * 100).toFixed(2));
   const totalCostInBrlCents = Number(
     (totalCost * USD_TO_BRL_RATE * 100).toFixed(2)
   );
 
+  console.log("Total cost in USD cents:", totalCostInUsdCents);
   console.log("Total cost in BRL cents:", totalCostInBrlCents);
-
-  // res.write(
-  //   `\n\nMESSAGES:\n\n${JSON.stringify(messages, null, 2)}\n\nTotal cost in BRL cents: ${totalCostInBrlCents}\n\nBUFFER:\n\n${buffer}`
-  // );
 
   // Stream the fake response slowly, character by character
   // for (let i = 0; i < fakeResponse.length; i++) {
@@ -72,11 +79,25 @@ app.post("/chat", async (req, res) => {
   res.end();
 });
 
+app.get("/audit-logs", (_req, res) => {
+  res.json(llmInteractionLogs);
+});
+
+app.post("/audit-logs/clear", (_req, res) => {
+  llmInteractionLogs.length = 0;
+  res.json({ success: true, message: "LLM audit logs cleared" });
+});
+
+app.post("/messages/clear", (_req, res) => {
+  messagesDatabase.length = 0;
+  res.json({ success: true, message: "Messages cleared" });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-const fakeResponse = `{
+const _fakeResponse = `{
  "thought": "The user is asking a mathematical question. The current vertical \`assistant\` does not have the capability to perform calculations. I need to load skills from the \`mathematician\` vertical to perform this calculation. After loading the skills, I will use the calculator tool to answer the question.",
  "action": {
   "tool_input": {

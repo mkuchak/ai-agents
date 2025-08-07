@@ -6,6 +6,7 @@ import {
 } from "@google/genai";
 import type {
   CallLlmResponse,
+  LlmInteractionCallback,
   StreamingCallback,
   TokenUsage,
 } from "@repo/ai-agents";
@@ -13,18 +14,22 @@ import { getLlmPrice } from "@repo/llm-prices";
 
 export async function geminiCallLlm(
   input: string,
-  onStreamingChunk?: StreamingCallback
+  onStreamingChunk?: StreamingCallback,
+  onLlmInteraction?: LlmInteractionCallback
 ): Promise<CallLlmResponse> {
   // Just select the first model from the list
-  const activeThinking = false;
   const [model] = [
-    "gemini-2.5-flash", // reasonable price, very good performance
-    "gemini-2.5-pro", // bad price, best performance (active thinking is obligatory)
     "gemini-2.0-flash", // good price, good performance
+    "gemini-2.5-flash", // reasonable price, very good performance
+    "gemini-2.5-pro", // bad price, best performance
     "gemini-2.5-flash-lite-preview-06-17", // good price, good performance but unstable yet
     "gemini-2.0-flash-lite", // awesome price, bad performance
   ];
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  // In-built reasoning mode (must be `true` for gemini-2.5-pro)
+  const activeThinking = false;
+
+  // Config and contents for the LLM call
   const config: GenerateContentConfig = {
     thinkingConfig: {
       thinkingBudget: activeThinking ? -1 : 0,
@@ -90,6 +95,7 @@ export async function geminiCallLlm(
     },
   ];
 
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const response = await ai.models.generateContentStream({
     config,
     model,
@@ -143,6 +149,9 @@ export async function geminiCallLlm(
       cost: cost,
     };
   }
+
+  // Call the callback with input and output data
+  onLlmInteraction?.({ input: input, output: accumulatedResponse });
 
   return {
     content: accumulatedResponse,
