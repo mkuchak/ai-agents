@@ -4,8 +4,10 @@ import type {
   ChatState,
   TransformedMessage,
 } from "../types/message";
+import type { Message } from "@repo/ai-agents";
 
 interface ChatStore {
+  // State
   messages: ChatMessage[];
   streamingMessages: TransformedMessage[];
   state: ChatState;
@@ -17,7 +19,8 @@ interface ChatStore {
   finalizeChatResponse: () => void;
   setState: (state: ChatState) => void;
   setError: (error: string | null) => void;
-  clearMessages: () => void;
+  clearMessages: () => Promise<void>;
+  loadMessages: (messages: Message[]) => void;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -134,9 +137,40 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({ error, state: error ? "error" : "idle" });
   },
 
-  clearMessages: () => {
+  clearMessages: async () => {
+    // Clear messages on frontend immediately
     set({
       messages: [],
+      streamingMessages: [],
+      state: "idle",
+      error: null,
+    });
+
+    // Also clear messages on backend
+    try {
+      await fetch("http://localhost:3000/messages/clear", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.warn("Failed to clear messages on backend:", error);
+      // Don't show error to user for this - the frontend is already cleared
+    }
+  },
+
+  loadMessages: (messages: Message[]) => {
+    // Convert backend messages to chat messages
+    const chatMessages: ChatMessage[] = messages.map((msg, index) => ({
+      id: msg.id || `${msg.role}-${index}`,
+      role: msg.role as "user" | "assistant" | "tool",
+      content: msg.content,
+      metadata: msg.metadata,
+      timestamp: new Date(msg.timestamp || Date.now()),
+      status: "completed",
+      isStreaming: false,
+    }));
+
+    set({
+      messages: chatMessages,
       streamingMessages: [],
       state: "idle",
       error: null,

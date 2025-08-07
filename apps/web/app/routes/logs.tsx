@@ -1,4 +1,3 @@
-import { Button } from "@repo/ui/components/button";
 import {
   CodeBlock,
   CodeBlockBody,
@@ -14,16 +13,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@repo/ui/components/collapsible";
-import { ThemeSwitcher } from "@repo/ui/components/theme-switcher";
 import {
   ChevronDownIcon,
   FileTextIcon,
   RefreshCwIcon,
-  TrashIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { AppHeader } from "../components/chat-header";
 
 interface AuditLog {
   input: string;
@@ -42,7 +38,6 @@ export function meta() {
 }
 
 export default function Logs() {
-  const { theme, setTheme } = useTheme();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,17 +54,9 @@ export default function Logs() {
     }
   };
 
-  const clearLogs = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/audit-logs/clear", {
-        method: "POST",
-      });
-      if (response.ok) {
-        setLogs([]);
-      }
-    } catch (error) {
-      console.error("Failed to clear audit logs:", error);
-    }
+  const handleLocalClear = async () => {
+    // Only handle local state updates - the AppHeader handles the API calls
+    setLogs([]);
   };
 
   useEffect(() => {
@@ -96,37 +83,14 @@ export default function Logs() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b bg-background/80 p-6 backdrop-blur-sm">
-        <div>
-          <h1 className="font-bold text-2xl tracking-tight">LLM Audit Logs</h1>
-          <p className="text-muted-foreground text-sm">
-            Track all LLM input and output interactions
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <FileTextIcon size={16} />
-              Chat
-            </Button>
-          </Link>
-          <ThemeSwitcher
-            value={theme as "light" | "dark" | "system"}
-            onChange={setTheme}
-          />
-          <Button
-            type="button"
-            onClick={clearLogs}
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <TrashIcon size={16} />
-            Clear
-          </Button>
-        </div>
-      </div>
+      <AppHeader
+        title="LLM Audit Logs"
+        description="Track all LLM input and output interactions"
+        navigationTo="/"
+        navigationIcon={FileTextIcon}
+        navigationLabel="Chat"
+        onClear={handleLocalClear}
+      />
 
       {/* Content */}
       <div className="space-y-6 p-6">

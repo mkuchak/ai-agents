@@ -85,18 +85,22 @@ app.post("/chat", async (req, res) => {
   res.end();
 });
 
-app.get("/audit-logs", (_req, res) => {
-  res.json(llmInteractionLogs);
+app.get("/messages", (_req, res) => {
+  res.json(messagesDatabase);
 });
 
-app.post("/audit-logs/clear", (_req, res) => {
-  llmInteractionLogs.length = 0;
-  res.json({ success: true, message: "LLM audit logs cleared" });
+app.get("/audit-logs", (_req, res) => {
+  res.json(llmInteractionLogs);
 });
 
 app.post("/messages/clear", (_req, res) => {
   messagesDatabase.length = 0;
   res.json({ success: true, message: "Messages cleared" });
+});
+
+app.post("/audit-logs/clear", (_req, res) => {
+  llmInteractionLogs.length = 0;
+  res.json({ success: true, message: "LLM audit logs cleared" });
 });
 
 app.listen(PORT, () => {

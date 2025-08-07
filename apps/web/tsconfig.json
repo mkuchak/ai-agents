@@ -11,6 +11,7 @@
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
       "~/*": ["./app/*"],
+      "@repo/ai-agents/*": ["../../packages/ai-agents/src/*"],
       "@repo/ui/*": ["../../packages/ui/src/*"]
     }
   }

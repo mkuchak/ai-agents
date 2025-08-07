@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useChatStore } from "../stores/chat-store";
 import { StreamingStateParser } from "../utils/streaming-parser";
 
@@ -14,10 +14,29 @@ export function useChat() {
     setState,
     setError,
     clearMessages,
+    loadMessages,
   } = useChatStore();
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const parserRef = useRef<StreamingStateParser | null>(null);
+
+  // Load existing messages on mount
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/messages");
+        if (response.ok) {
+          const existingMessages = await response.json();
+          loadMessages(existingMessages);
+        }
+      } catch (error) {
+        console.warn("Failed to load existing messages:", error);
+        // Don't show error to user for this - it's not critical
+      }
+    };
+
+    fetchMessages();
+  }, [loadMessages]);
 
   const sendMessage = useCallback(
     async (message: string) => {
