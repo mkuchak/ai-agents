@@ -33,13 +33,15 @@ import {
   AIToolResult,
 } from "@repo/ui/components/ai/tool";
 import { Button } from "@repo/ui/components/button";
-import { type FormEventHandler, useEffect, useState } from "react";
+import { type FormEventHandler, useEffect, useRef, useState } from "react";
 import { useChat } from "../hooks/use-chat";
 import { ChatHeader } from "./chat-header";
 import { ChatSuggestions } from "./chat-suggestions";
 
 export function ChatInterface() {
   const [text, setText] = useState<string>("");
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const {
     messages,
     streamingMessages,
@@ -53,19 +55,65 @@ export function ChatInterface() {
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
-    if (!text.trim() || isLoading) return;
+    const isCurrentlyLoading = isLoading || isLocalLoading;
+    if (!text.trim() || isCurrentlyLoading) return;
 
-    await sendMessage(text);
+    // Immediately freeze the input
+    setIsLocalLoading(true);
+    const messageToSend = text;
     setText("");
+
+    try {
+      await sendMessage(messageToSend);
+    } finally {
+      // Reset local loading state when done
+      setIsLocalLoading(false);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter without shift sends the message
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      const isCurrentlyLoading = isLoading || isLocalLoading;
+      if (text.trim() && !isCurrentlyLoading) {
+        handleSubmit(event as any);
+      }
+    }
+    // Shift+Enter allows line break (default behavior)
   };
 
   const handleSuggestionClick = async (suggestion: string) => {
-    if (isLoading) return;
-    await sendMessage(suggestion);
+    const isCurrentlyLoading = isLoading || isLocalLoading;
+    if (isCurrentlyLoading) return;
+    
+    // Immediately freeze the input
+    setIsLocalLoading(true);
+    setText("");
+
+    try {
+      await sendMessage(suggestion);
+    } finally {
+      setIsLocalLoading(false);
+    }
   };
 
+  // Auto-focus input after agent stops responding
+  useEffect(() => {
+    if (state === "idle" && !isLocalLoading && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [state, isLocalLoading]);
+
+  // Focus input on component mount
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
   const getSubmitStatus = () => {
-    if (state === "loading") return "submitted";
+    if (state === "loading" || isLocalLoading) return "submitted";
     if (state === "streaming") return "streaming";
     if (state === "error") return "error";
     return "ready";
@@ -331,19 +379,25 @@ export function ChatInterface() {
         <div className="w-full px-4 pb-4">
           <AIInput onSubmit={handleSubmit}>
             <AIInputTextarea
+              ref={textareaRef}
               onChange={(event) => setText(event.target.value)}
+              onKeyDown={handleKeyDown}
               value={text}
               placeholder="What would you like to know?"
-              disabled={isLoading}
+              disabled={isLoading || isLocalLoading}
               className="resize-none"
             />
             <AIInputToolbar>
               <div className="flex items-center gap-3">
                 {/* Status indicator */}
                 <span className="rounded-full bg-muted/50 px-2 py-1 text-muted-foreground text-xs">
-                  {state === "idle" && "Ready"}
-                  {state === "loading" && "Connecting..."}
-                  {state === "streaming" && "Streaming..."}
+                  {(isLoading || isLocalLoading) && state !== "error" && (
+                    <>
+                      {(state === "loading" || isLocalLoading) && "Connecting..."}
+                      {state === "streaming" && "Streaming..."}
+                    </>
+                  )}
+                  {state === "idle" && !isLocalLoading && "Ready"}
                   {state === "error" && "Error"}
                 </span>
 
