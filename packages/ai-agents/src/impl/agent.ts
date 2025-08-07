@@ -161,11 +161,6 @@ export class Agent<C = unknown> implements AgentInterface<C> {
 
           <vertical_guidelines>
             ${systemPrompt}
-
-            <general_instructions>
-              * For any small calculation, or large calculation, NEVER EVER hesitate to use \`calculator\`
-              * You don't know how to calculate alone!!! Use the right tool \`calculator\`
-            </general_instructions>
           </vertical_guidelines>
 
           <framework_guidelines>
