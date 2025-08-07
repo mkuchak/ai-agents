@@ -19,9 +19,9 @@ export async function geminiCallLlm(
 ): Promise<CallLlmResponse> {
   // Just select the first model from the list
   const [model] = [
-    "gemini-2.0-flash", // good price, good performance
     "gemini-2.5-flash", // reasonable price, very good performance
     "gemini-2.5-pro", // bad price, best performance
+    "gemini-2.0-flash", // good price, good performance
     "gemini-2.5-flash-lite-preview-06-17", // good price, good performance but unstable yet
     "gemini-2.0-flash-lite", // awesome price, bad performance
   ];
