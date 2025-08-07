@@ -35,7 +35,9 @@ app.post("/chat", async (req, res) => {
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Transfer-Encoding", "chunked");
 
-  const messages = await orchestratorAgent.run({
+  const messages: Message[] = [];
+  
+  await orchestratorAgent.run({
     history: messagesDatabase,
     message: {
       role: "user",
@@ -44,6 +46,7 @@ app.post("/chat", async (req, res) => {
     onMessage: (message) => {
       message.id = randomUUID();
       totalCost += message.metadata?.usage?.cost ?? 0;
+      messages.push(structuredClone(message));
     },
     onStreamingChunk: (chunk) => {
       res.write(chunk);
@@ -60,13 +63,16 @@ app.post("/chat", async (req, res) => {
     },
   });
 
+  // Add only the new messages that were generated during this conversation turn
   messagesDatabase.push(...messages);
 
+  // Calculate the total cost in USD and BRL cents
   const totalCostInUsdCents = Number((totalCost * 100).toFixed(2));
   const totalCostInBrlCents = Number(
     (totalCost * USD_TO_BRL_RATE * 100).toFixed(2)
   );
 
+  // Log the total cost in USD and BRL cents
   console.log("Total cost in USD cents:", totalCostInUsdCents);
   console.log("Total cost in BRL cents:", totalCostInBrlCents);
 
