@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const USD_TO_BRL_RATE = 5.46;
 
 const messagesDatabase: Message[] = [];
-const llmInteractionLogs: (LlmInteractionData & { timestamp: string })[] = [];
+const auditLogsDatabase: (LlmInteractionData & { timestamp: string })[] = [];
 
 const app = express();
 
@@ -55,7 +55,7 @@ app.post("/chat", async (req, res) => {
       res.write(JSON.stringify(toolResult));
     },
     onLlmInteraction: (data) => {
-      llmInteractionLogs.push({
+      auditLogsDatabase.push({
         input: data.input,
         output: data.output,
         timestamp: new Date().toISOString(),
@@ -90,7 +90,7 @@ app.get("/messages", (_req, res) => {
 });
 
 app.get("/audit-logs", (_req, res) => {
-  res.json(llmInteractionLogs);
+  res.json(auditLogsDatabase);
 });
 
 app.post("/messages/clear", (_req, res) => {
@@ -99,7 +99,7 @@ app.post("/messages/clear", (_req, res) => {
 });
 
 app.post("/audit-logs/clear", (_req, res) => {
-  llmInteractionLogs.length = 0;
+  auditLogsDatabase.length = 0;
   res.json({ success: true, message: "LLM audit logs cleared" });
 });
 
