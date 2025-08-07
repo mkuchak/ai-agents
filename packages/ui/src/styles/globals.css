@@ -125,4 +125,15 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Custom text selection colors */
+  ::selection {
+    background: oklch(0.646 0.222 41.116 / 0.3); /* chart-1 color with transparency */
+    color: oklch(0.145 0 0); /* foreground color for light mode */
+  }
+  
+  .dark ::selection {
+    background: oklch(0.488 0.243 264.376 / 0.4); /* chart-1 dark color with transparency */
+    color: oklch(0.985 0 0); /* foreground color for dark mode */
+  }
 }

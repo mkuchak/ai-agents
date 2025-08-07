@@ -51,21 +51,6 @@ export function ChatInterface() {
     clearMessages,
   } = useChat();
 
-  // Essential debugging - only log when state changes or we get final messages
-  useEffect(() => {
-    if (state === "idle" && messages.length > 0) {
-      console.log("🏁 Chat finished - Final messages:", messages.length);
-      messages.forEach((msg, i) => {
-        if (msg.content && msg.content.includes("$$")) {
-          console.log(
-            `📐 Message ${i} contains LaTeX:`,
-            msg.content.substring(0, 100)
-          );
-        }
-      });
-    }
-  }, [messages, state]);
-
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
     if (!text.trim() || isLoading) return;

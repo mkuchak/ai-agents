@@ -1,7 +1,8 @@
 import { Button } from "@repo/ui/components/button";
 import { ThemeSwitcher } from "@repo/ui/components/theme-switcher";
-import { TrashIcon } from "lucide-react";
+import { FileTextIcon, TrashIcon } from "lucide-react";
 import { useTheme } from "next-themes";
+import { Link } from "react-router";
 
 interface ChatHeaderProps {
   onClearMessages: () => void;
@@ -19,6 +20,12 @@ export function ChatHeader({ onClearMessages }: ChatHeaderProps) {
         </p>
       </div>
       <div className="flex items-center gap-4">
+        <Link to="/logs">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <FileTextIcon size={16} />
+            Logs
+          </Button>
+        </Link>
         <ThemeSwitcher
           value={theme as "light" | "dark" | "system"}
           onChange={setTheme}

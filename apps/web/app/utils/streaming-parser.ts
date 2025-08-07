@@ -6,6 +6,23 @@ import type {
   TransformedMessage,
 } from "../types/message";
 
+// Type for tool metadata structure
+type ToolMetadata = {
+  name: string;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  status?: "pending" | "running" | "completed" | "error";
+  startTime?: Date;
+  endTime?: Date;
+};
+
+// Type for tool start objects that have name and input but not is_tool_result
+type ToolStartObject = {
+  name: string;
+  input: Record<string, unknown>;
+  output?: Record<string, unknown>;
+};
+
 export class StreamingStateParser {
   // Buffer for the current (potentially incomplete) JSON object
   private currentJsonChunk: string = "";
@@ -58,7 +75,7 @@ export class StreamingStateParser {
       return `reasoning-${this.messageCounter++}`;
     }
     if (message.metadata?.tool) {
-      return `tool-${(message.metadata.tool as any).name || "unknown"}-${this.messageCounter++}`;
+      return `tool-${(message.metadata.tool as ToolMetadata).name || "unknown"}-${this.messageCounter++}`;
     }
     return `unknown-${this.messageCounter++}`;
   }
@@ -113,7 +130,7 @@ export class StreamingStateParser {
 
     // Check for tool start (when we have tool name/input but maybe no output yet)
     if ("name" in rawObject && "input" in rawObject) {
-      const toolStart = rawObject as any;
+      const toolStart = rawObject as ToolStartObject;
       const message: TransformedMessage = {
         role: "tool",
         timestamp: now,
