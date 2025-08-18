@@ -9,5 +9,5 @@ orchestratorAgent.registerAgent("assistant", assistantAgent, [
   "check the weather",
 ]);
 orchestratorAgent.registerAgent("mathematician", calculatorAgent, [
-  "calculate",
+  "can realize mathematical operations",
 ]);
