@@ -70,6 +70,8 @@ export class AgentOrchestrator {
 
     return dedent`
       <verticals_info>
+        <!-- ATTENTION: IF YOU DISREGARD THESE RULES, THE SYSTEM WILL COLLAPSE -->
+        <!-- BE AWARE, THAT YOU ARE IN THE ${currentAgentId} VERTICAL CURRENTLY, THIS IS THE SOURCE OF THE TRUTH ABOUT THE CURRENT VERTICAL -->
         <current_vertical>${currentAgentId}</current_vertical>
 
         <available_verticals>
@@ -130,18 +132,18 @@ export class AgentOrchestrator {
     context = {},
     onMessage,
     onStreamingChunk,
+    onLlmInteraction,
     onToolResult,
     preferredAgentId,
-    onLlmInteraction,
   }: {
     message: Message;
     history?: Message[];
     context?: OrchestratorContext;
     onMessage?: OnMessage;
     onStreamingChunk?: StreamingCallback;
+    onLlmInteraction?: LlmInteractionCallback;
     onToolResult?: ToolResultStreamingCallback;
     preferredAgentId?: string;
-    onLlmInteraction?: LlmInteractionCallback;
   }): Promise<Message[]> {
     // Create a new sequence for each execution
     const handoffSequence: string[] = [];
@@ -155,10 +157,10 @@ export class AgentOrchestrator {
       context,
       onMessage,
       onStreamingChunk,
+      onLlmInteraction,
       onToolResult,
       steps: 0,
       handoffSequence, // Pass the sequence as a parameter
-      onLlmInteraction,
     });
   }
 
@@ -170,9 +172,11 @@ export class AgentOrchestrator {
    * @param history Conversation history
    * @param context Context information
    * @param onMessage Callback for processing messages
+   * @param onStreamingChunk Callback for streaming chunks
+   * @param onLlmInteraction Callback for handling LLM interactions
    * @param onToolResult Callback for handling tool execution results
    * @param steps Current number of steps taken
-   * @param handoffSequence Current handoff sequence
+   * @param handoffSequence Current handoff sequence (array of agent IDs)
    * @returns All messages generated during processing
    */
   private async invokeAgent({
@@ -182,10 +186,10 @@ export class AgentOrchestrator {
     context,
     onMessage,
     onStreamingChunk,
+    onLlmInteraction,
     onToolResult,
     steps,
     handoffSequence,
-    onLlmInteraction,
   }: {
     agentId: string;
     message?: Message;
@@ -193,10 +197,10 @@ export class AgentOrchestrator {
     context: OrchestratorContext;
     onMessage?: OnMessage;
     onStreamingChunk?: StreamingCallback;
+    onLlmInteraction?: LlmInteractionCallback;
     onToolResult?: ToolResultStreamingCallback;
     steps: number;
     handoffSequence: string[];
-    onLlmInteraction?: LlmInteractionCallback;
   }): Promise<Message[]> {
     // Check if we've exceeded the maximum number of steps
     if (steps >= this.maxSteps) {
@@ -250,11 +254,11 @@ export class AgentOrchestrator {
       await agent.run({
         message,
         history,
-        context,
+        context: { ...context, currentVerticalId: agentId },
         onMessage: wrappedOnMessage,
         onStreamingChunk,
-        onToolResult,
         onLlmInteraction,
+        onToolResult,
       });
 
       // Check if skills loading was requested
@@ -307,10 +311,10 @@ export class AgentOrchestrator {
           context,
           onMessage,
           onStreamingChunk,
+          onLlmInteraction,
           onToolResult,
           steps: steps + 1,
           handoffSequence,
-          onLlmInteraction,
         });
 
         // Return all messages, including those from the target agent

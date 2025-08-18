@@ -26,7 +26,10 @@ const DEFAULT_TIMEZONE: TimeZone = "America/New_York";
 const DEFAULT_LOCALE: Locale = "en-US";
 const DEFAULT_MAX_STEPS = 20;
 
-export class Agent<C = unknown> implements AgentInterface<C> {
+export class Agent<
+  C extends { currentVerticalId?: string } = { currentVerticalId?: string }
+> implements AgentInterface<C>
+{
   private tools: Map<string, Tool<z.ZodType, C>> = new Map();
   private _systemPrompt: string;
   private callLlm: CallLlm;
@@ -34,7 +37,6 @@ export class Agent<C = unknown> implements AgentInterface<C> {
   private isHandoffEnabled: boolean = false;
   private timeZone: TimeZone;
   private locale: Locale;
-  private onLlmInteraction?: LlmInteractionCallback;
 
   constructor(
     systemPrompt: string,
@@ -43,7 +45,6 @@ export class Agent<C = unknown> implements AgentInterface<C> {
       maxSteps?: number;
       timeZone?: TimeZone;
       locale?: Locale;
-      onLlmInteraction?: LlmInteractionCallback;
     }
   ) {
     this._systemPrompt = systemPrompt;
@@ -51,7 +52,6 @@ export class Agent<C = unknown> implements AgentInterface<C> {
     this.maxSteps = options?.maxSteps ?? DEFAULT_MAX_STEPS;
     this.timeZone = options?.timeZone ?? DEFAULT_TIMEZONE;
     this.locale = options?.locale ?? DEFAULT_LOCALE;
-    this.onLlmInteraction = options?.onLlmInteraction;
   }
 
   /**
@@ -107,7 +107,11 @@ export class Agent<C = unknown> implements AgentInterface<C> {
   /**
    * Build a prompt for the agent
    */
-  private buildPrompt(messages: Message[], systemPrompt: string): string {
+  private buildPrompt(
+    messages: Message[],
+    systemPrompt: string,
+    currentVerticalId?: string
+  ): string {
     const toolDescriptions = Array.from(this.tools.values())
       .map((tool) => {
         const schemaJson = this.generateJsonSchema(tool.schema);
@@ -291,6 +295,16 @@ export class Agent<C = unknown> implements AgentInterface<C> {
         <conversation_history>
           ${history}
         </conversation_history>
+
+        ${
+          currentVerticalId
+            ? `
+              <current_vertical_id>
+                ${currentVerticalId}
+              </current_vertical_id>
+            `
+            : ""
+        }
       </scope>
     `);
   }
@@ -332,13 +346,12 @@ export class Agent<C = unknown> implements AgentInterface<C> {
 
     const toolName = parsed.action?.tool_name?.trim().toLowerCase();
 
-    // Return action only if it's a valid tool
+    // Return action if tool is requested (even if it doesn't exist)
     if (
       parsed.action?.tool_name &&
       parsed.action?.tool_input &&
       toolName &&
-      toolName !== "none" &&
-      this.tools.has(toolName)
+      toolName !== "none"
     ) {
       return {
         thought,
@@ -368,7 +381,12 @@ export class Agent<C = unknown> implements AgentInterface<C> {
   ): Promise<string> {
     const tool = this.tools.get(toolName);
     if (!tool) {
-      return JSON.stringify({ error: `Tool '${toolName}' not found` });
+      const verticalHint = this.isHandoffEnabled
+        ? " (please verify your current vertical)"
+        : "";
+      return JSON.stringify({
+        error: `Tool '${toolName}' not found${verticalHint}`,
+      });
     }
 
     try {
@@ -415,17 +433,17 @@ export class Agent<C = unknown> implements AgentInterface<C> {
     history = [],
     onMessage,
     onStreamingChunk,
+    onLlmInteraction,
     onToolResult,
     context,
-    onLlmInteraction,
   }: {
     message?: Message;
     history?: Message[];
     onMessage?: OnMessage;
     onStreamingChunk?: StreamingCallback;
+    onLlmInteraction?: LlmInteractionCallback;
     onToolResult?: ToolResultStreamingCallback;
     context?: C;
-    onLlmInteraction?: LlmInteractionCallback;
   }): Promise<Message[]> {
     const messages: Message[] = [];
 
@@ -441,14 +459,17 @@ export class Agent<C = unknown> implements AgentInterface<C> {
       };
 
       messages.push(messageWithTimestamp);
-      if (onMessage) {
-        await onMessage(messageWithTimestamp);
-      }
+      await onMessage?.(messageWithTimestamp);
     };
 
     if (message) {
       await addMessage(message);
     }
+
+    // Filter out load_skills_from tool messages from history
+    const filteredHistory = history.filter(
+      (msg) => !(msg.metadata?.tool?.name === "load_skills_from")
+    );
 
     let isRunning = true;
     let steps = 0;
@@ -479,13 +500,14 @@ export class Agent<C = unknown> implements AgentInterface<C> {
 
       // Build the prompt with the system prompt
       const prompt = this.buildPrompt(
-        [...history, ...messages],
-        this._systemPrompt
+        [...filteredHistory, ...messages],
+        this._systemPrompt,
+        context?.currentVerticalId
       );
       const response = await this.callLlm(
         prompt,
         onStreamingChunk,
-        onLlmInteraction || this.onLlmInteraction
+        onLlmInteraction
       );
 
       if (!response) {
